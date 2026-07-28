@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "indexnow:submit": "node --env-file=.env.local scripts/submit-indexnow.mjs"
+  }
+}
