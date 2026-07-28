@@ -14,7 +14,6 @@ móveis.
 - TypeScript
 - Tailwind CSS
 - GSAP
-- Lenis
 
 ## Requisitos
 
@@ -54,6 +53,7 @@ npm run lint
 npm run typecheck
 npm run test
 npm run check
+npm run indexnow
 ```
 
 O comando abaixo executa a validação de tipos, o lint e os testes em sequência:
@@ -62,9 +62,12 @@ O comando abaixo executa a validação de tipos, o lint e os testes em sequênci
 npm run check
 ```
 
+`npm run indexnow` é manual e só aceita uma URL HTTPS canônica de Production com uma chave
+`INDEXNOW_KEY` válida. Ele não deve ser executado em localhost ou Preview.
+
 ## Configuração do projeto
 
-As informações globais do site ficam centralizadas em:
+As informações públicas e a URL canônica do site ficam centralizadas em:
 
 ```text
 lib/site.ts
@@ -80,29 +83,23 @@ Nesse arquivo são configurados dados como:
 - localização;
 - link de agendamento;
 - URL oficial do projeto;
-- informações utilizadas em SEO e dados estruturados.
+
+Os metadados, serviços e dados estruturados usados no SEO ficam em `lib/seo.ts`.
 
 Antes de publicar uma nova versão, confira se todos os dados estão atualizados e correspondem às
 informações reais do profissional.
 
 ## Variáveis de ambiente
 
-Crie um arquivo `.env.local` com a URL pública do site:
+Copie `.env.example` para `.env.local`. Para desenvolvimento local, mantenha:
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://davi-faria-physio.vercel.app
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Quando um domínio próprio for configurado, substitua essa URL pelo endereço oficial.
-
-Outras variáveis podem ser utilizadas para verificações de mecanismos de busca e indexação:
-
-```env
-NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
-NEXT_PUBLIC_BING_SITE_VERIFICATION=
-NEXT_PUBLIC_CONTENT_LAST_MODIFIED=
-INDEXNOW_KEY=
-```
+Na Vercel Production, configure a URL HTTPS canônica do site. Os tokens de Google, Bing e IndexNow
+só devem ser adicionados quando houver valores reais; `INDEXNOW_KEY` permanece privada e não deve
+usar o prefixo `NEXT_PUBLIC_`.
 
 ## Estrutura principal
 
@@ -124,6 +121,7 @@ tests/
 - `components/providers/`: providers globais;
 - `hooks/`: animações e interações reutilizáveis;
 - `lib/site.ts`: configuração central do projeto;
+- `lib/seo.ts`: metadados e dados estruturados para SEO;
 - `public/`: imagens e arquivos públicos;
 - `scripts/`: scripts auxiliares de indexação e manutenção;
 - `tests/`: testes automatizados.
