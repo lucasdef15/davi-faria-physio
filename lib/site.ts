@@ -1,14 +1,69 @@
-const deploymentHost =
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-  process.env.VERCEL_URL ??
-  'http://localhost:3000';
+type SiteEnvironment = Record<string, string | undefined>;
 
-const normalizedDeploymentUrl = deploymentHost.startsWith('http')
-  ? deploymentHost
-  : `https://${deploymentHost}`;
+export function getContentLastModified(value: string | undefined): Date | undefined {
+  if (!value) {
+    return undefined;
+  }
 
-export const SITE_URL = new URL(normalizedDeploymentUrl);
+  const normalizedValue = value.trim();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)) {
+    throw new Error('NEXT_PUBLIC_CONTENT_LAST_MODIFIED must use the YYYY-MM-DD format.');
+  }
+
+  const date = new Date(`${normalizedValue}T00:00:00.000Z`);
+
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalizedValue) {
+    throw new Error('NEXT_PUBLIC_CONTENT_LAST_MODIFIED must contain a valid calendar date.');
+  }
+
+  return date;
+}
+
+export function isPreviewDeployment(environment: SiteEnvironment = process.env): boolean {
+  return environment.VERCEL_ENV === 'preview';
+}
+
+export function resolveSiteUrl(environment: SiteEnvironment = process.env): URL {
+  const configuredUrl = environment.NEXT_PUBLIC_SITE_URL?.trim();
+  const productionHost = environment.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  const isPreview = isPreviewDeployment(environment);
+  const deploymentUrl = isPreview ? productionHost || configuredUrl : configuredUrl || productionHost;
+
+  if (!deploymentUrl) {
+    if (environment.VERCEL_ENV === 'production' || isPreview) {
+      throw new Error('A public Production URL must be configured for Vercel deployments.');
+    }
+
+    return new URL('http://localhost:3000');
+  }
+
+  const normalizedUrl = deploymentUrl.includes('://') ? deploymentUrl : `https://${deploymentUrl}`;
+  const siteUrl = new URL(normalizedUrl);
+
+  if (!['http:', 'https:'].includes(siteUrl.protocol)) {
+    throw new Error('NEXT_PUBLIC_SITE_URL must use the HTTP or HTTPS protocol.');
+  }
+
+  if (siteUrl.username || siteUrl.password || siteUrl.search || siteUrl.hash || siteUrl.pathname !== '/') {
+    throw new Error('NEXT_PUBLIC_SITE_URL must contain only the public site origin.');
+  }
+
+  if (environment.VERCEL_ENV === 'production' && siteUrl.protocol !== 'https:') {
+    throw new Error('NEXT_PUBLIC_SITE_URL must use HTTPS in production.');
+  }
+
+  const isVercelPreviewHost =
+    siteUrl.hostname.endsWith('.vercel.app') && siteUrl.hostname.includes('-git-');
+
+  if (isPreview && isVercelPreviewHost) {
+    throw new Error('Preview deployments must use the public Production URL as canonical.');
+  }
+
+  return siteUrl;
+}
+
+export const SITE_URL = resolveSiteUrl();
 
 export const SITE_CONFIG = {
   agenda: {

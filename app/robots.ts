@@ -1,10 +1,19 @@
 import type { MetadataRoute } from 'next';
 
-import { SITE_URL } from '@/lib/site';
+import { isPreviewDeployment, SITE_URL } from '@/lib/site';
 
 const ALLOW_OPENAI_TRAINING = false;
 
 export default function robots(): MetadataRoute.Robots {
+  if (isPreviewDeployment()) {
+    return {
+      rules: {
+        disallow: '/',
+        userAgent: '*',
+      },
+    };
+  }
+
   const rules: MetadataRoute.Robots['rules'] = [
     {
       allow: '/',

@@ -8,6 +8,11 @@ function fail(message) {
 
 const siteUrlValue = process.env.NEXT_PUBLIC_SITE_URL?.trim();
 const key = process.env.INDEXNOW_KEY?.trim();
+const vercelEnvironment = process.env.VERCEL_ENV?.trim();
+
+if (vercelEnvironment && vercelEnvironment !== 'production') {
+  fail('O envio IndexNow só é permitido no ambiente Production.');
+}
 
 if (!siteUrlValue) {
   fail('Defina NEXT_PUBLIC_SITE_URL antes de executar o script.');
@@ -23,6 +28,14 @@ try {
   siteUrl = new URL(siteUrlValue);
 } catch {
   fail('NEXT_PUBLIC_SITE_URL precisa ser uma URL absoluta válida.');
+}
+
+const isLocalHostname = ['127.0.0.1', '[::1]', 'localhost'].includes(siteUrl.hostname);
+const isVercelPreviewHostname =
+  siteUrl.hostname.endsWith('.vercel.app') && siteUrl.hostname.includes('-git-');
+
+if (siteUrl.protocol !== 'https:' || isLocalHostname || isVercelPreviewHostname) {
+  fail('IndexNow exige a URL HTTPS canônica de Production, nunca localhost ou Preview.');
 }
 
 const requestedPaths = process.argv.slice(2);
