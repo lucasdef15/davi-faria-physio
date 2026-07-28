@@ -1,5 +1,5 @@
 import HeroActions from './HeroActions';
-import HeroBackgroundCanvas from './HeroBackgroundCanvas';
+import HeroCanvasRuntime from './HeroCanvasRuntime';
 import HeroContent from './HeroContent';
 import HeroMotion from './HeroMotion';
 import Indicators from './Indicators';
@@ -17,9 +17,10 @@ export default function Hero() {
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-[-18%] top-[16%] h-[58%] rotate-[-5deg] bg-[linear-gradient(105deg,transparent_20%,rgba(255,255,255,.32)_48%,transparent_76%)] opacity-45 blur-3xl sm:inset-x-[-8%] sm:top-[12%] sm:h-[52%]"
+        data-hero-glow
       />
 
-      <HeroBackgroundCanvas />
+      <HeroCanvasRuntime />
 
       <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-5 pt-32 pb-40 text-center sm:px-8 md:pt-36 md:pb-36">
         <HeroContent />

@@ -1,8 +1,11 @@
 'use client';
 
-import { RefObject, useEffect, useRef } from 'react';
+import type { RefObject } from 'react';
+
+import { useEffect, useRef } from 'react';
 
 import { BreathingProfile, RGB } from '@/components/sections/for-whom/symptoms';
+import { getMediaQuery, subscribeToMediaQuery } from '@/lib/media-query';
 
 interface AnimatedState {
   breathDepth: number;
@@ -35,7 +38,7 @@ export function useBreathingAnimation(
     if (
       el &&
       typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      getMediaQuery('(prefers-reduced-motion: reduce)').matches
     ) {
       applyStaticProfile(el, profile);
     }
@@ -45,14 +48,16 @@ export function useBreathingAnimation(
     const el = targetRef.current;
     if (!el) return;
 
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const mediaQuery = getMediaQuery('(prefers-reduced-motion: reduce)');
+    const prefersReducedMotion = mediaQuery?.matches ?? false;
 
     if (
       prefersReducedMotion ||
-      typeof IntersectionObserver !== 'function'
+      typeof IntersectionObserver !== 'function' ||
+      typeof requestAnimationFrame !== 'function' ||
+      typeof cancelAnimationFrame !== 'function'
     ) {
+      setBreathingMotionState(el, false);
       applyStaticProfile(el, profileRef.current);
       return;
     }
@@ -77,7 +82,9 @@ export function useBreathingAnimation(
     };
 
     let raf = 0;
-    let last = performance.now();
+    let isIntersecting = false;
+    let isRunning = false;
+    let last = getNow();
 
     const frame = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
@@ -144,27 +151,37 @@ export function useBreathingAnimation(
       if (isRunning) raf = requestAnimationFrame(frame);
     };
 
-    let isRunning = false;
     const start = () => {
       if (isRunning) return;
       isRunning = true;
-      last = performance.now();
+      last = getNow();
       raf = requestAnimationFrame(frame);
     };
     const stop = () => {
+      if (!isRunning && raf === 0) return;
       isRunning = false;
       cancelAnimationFrame(raf);
+      raf = 0;
+    };
+    const syncAnimationState = () => {
+      const shouldRun = isIntersecting && !document.hidden && !(mediaQuery.matches ?? false);
+
+      setBreathingMotionState(el, shouldRun);
+
+      if (shouldRun) start();
+      else stop();
     };
 
     let observer: IntersectionObserver | null = null;
 
     try {
       observer = new IntersectionObserver(([entry]) => {
-        if (entry.isIntersecting) start();
-        else stop();
+        isIntersecting = entry.isIntersecting;
+        syncAnimationState();
       });
       observer.observe(el);
     } catch (error) {
+      setBreathingMotionState(el, false);
       applyStaticProfile(el, profileRef.current);
 
       if (process.env.NODE_ENV !== 'production') {
@@ -174,9 +191,21 @@ export function useBreathingAnimation(
       return;
     }
 
+    const handleVisibilityChange = () => syncAnimationState();
+    const handleReducedMotionChange = () => {
+      if (mediaQuery.matches) applyStaticProfile(el, profileRef.current);
+      syncAnimationState();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    const unsubscribeMediaQuery = subscribeToMediaQuery(mediaQuery, handleReducedMotionChange);
+
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      unsubscribeMediaQuery();
       observer?.disconnect();
       stop();
+      setBreathingMotionState(el, false);
     };
   }, [targetRef]);
 }
@@ -214,12 +243,20 @@ function clamp(x: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, x));
 }
 
+function getNow(): number {
+  return typeof performance !== 'undefined' ? performance.now() : Date.now();
+}
+
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
 function lerpRGB(a: [number, number, number], b: RGB, t: number): [number, number, number] {
   return [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+}
+
+function setBreathingMotionState(el: HTMLElement, isVisible: boolean): void {
+  el.dataset.breathingVisible = isVisible ? 'true' : 'false';
 }
 
 function smootherstep(x: number): number {

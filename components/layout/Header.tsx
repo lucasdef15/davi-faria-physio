@@ -8,6 +8,8 @@ import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react
 
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { getAnchorScrollTop } from '@/lib/anchor-navigation';
+import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
+import { getMediaQuery } from '@/lib/media-query';
 
 import LogoSVG from '../svg/LogoSVG';
 import MobileHeader from './MobileHeader';
@@ -143,7 +145,7 @@ export default function Header() {
         return;
       }
 
-      reduceMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      reduceMotionRef.current = getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false;
 
       gsap.set(header, {
         force3D: true,
@@ -279,7 +281,7 @@ export default function Header() {
 
     const handleScroll = () => {
       if (frameId === 0) {
-        frameId = window.requestAnimationFrame(syncHeader);
+        frameId = scheduleFrame(syncHeader);
       }
     };
 
@@ -287,7 +289,7 @@ export default function Header() {
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      window.cancelAnimationFrame(frameId);
+      cancelScheduledFrame(frameId);
       window.removeEventListener('scroll', handleScroll);
     };
   }, [applyCompactProgress, isMenuOpen, setHeaderMode, setSurfaceMode]);

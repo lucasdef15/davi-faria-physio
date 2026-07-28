@@ -118,8 +118,8 @@ tests/
 - `app/`: rotas, layout, metadata, sitemap, robots e arquivos técnicos;
 - `components/layout/`: header, navegação e footer;
 - `components/sections/`: seções da página;
-- `components/providers/`: providers globais;
 - `hooks/`: animações e interações reutilizáveis;
+- `hooks/hero-canvas/`: renderer, perfis de qualidade e tipos do canvas do Hero;
 - `lib/site.ts`: configuração central do projeto;
 - `lib/seo.ts`: metadados e dados estruturados para SEO;
 - `public/`: imagens e arquivos públicos;
