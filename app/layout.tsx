@@ -4,10 +4,7 @@ import { Geist, Montserrat_Alternates, Space_Grotesk } from 'next/font/google';
 
 import Footer from '@/components/layout/Footer';
 import Header from '@/components/layout/Header';
-import SmoothScrollProvider from '@/components/providers/SmoothScrollProvider';
 import { SITE_CONFIG, SITE_URL } from '@/lib/site';
-
-import 'lenis/dist/lenis.css';
 
 import './globals.css';
 
@@ -366,13 +363,11 @@ export default function RootLayout({
           type="application/ld+json"
         />
 
-        <SmoothScrollProvider>
-          <Header />
+        <Header />
 
-          <main className="flex-1">{children}</main>
+        <main className="flex-1">{children}</main>
 
-          <Footer />
-        </SmoothScrollProvider>
+        <Footer />
       </body>
     </html>
   );

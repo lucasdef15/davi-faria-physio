@@ -49,7 +49,10 @@ export function useBreathingAnimation(
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-    if (prefersReducedMotion) {
+    if (
+      prefersReducedMotion ||
+      typeof IntersectionObserver !== 'function'
+    ) {
       applyStaticProfile(el, profileRef.current);
       return;
     }
@@ -153,14 +156,26 @@ export function useBreathingAnimation(
       cancelAnimationFrame(raf);
     };
 
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) start();
-      else stop();
-    });
-    observer.observe(el);
+    let observer: IntersectionObserver | null = null;
+
+    try {
+      observer = new IntersectionObserver(([entry]) => {
+        if (entry.isIntersecting) start();
+        else stop();
+      });
+      observer.observe(el);
+    } catch (error) {
+      applyStaticProfile(el, profileRef.current);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Breathing animation was disabled after an observer error.', error);
+      }
+
+      return;
+    }
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       stop();
     };
   }, [targetRef]);

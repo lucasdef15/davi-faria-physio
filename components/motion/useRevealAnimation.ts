@@ -10,259 +10,91 @@ gsap.registerPlugin(useGSAP, ScrollTrigger);
 export type RevealVariant = 'default' | 'media' | 'panel';
 
 interface RevealAnimationOptions {
-  /**
-   * Desativa todas as animações deste container.
-   */
   disabled?: boolean;
-
-  /**
-   * Duração padrão da animação.
-   */
   duration?: number;
-
-  /**
-   * Curva de movimento padrão.
-   */
   ease?: string;
-
-  /**
-   * Exibe os marcadores do ScrollTrigger.
-   * Use somente durante desenvolvimento.
-   */
   markers?: boolean;
-
-  /**
-   * Mantém a animação executando apenas uma vez.
-   */
   once?: boolean;
-
-  /**
-   * Seletor dos elementos que serão animados
-   * dentro do container retornado pelo hook.
-   */
   selector?: string;
-
-  /**
-   * Posição em que a animação começa.
-   *
-   * Exemplo:
-   * "top 86%" significa que o reveal começa quando
-   * o topo do elemento alcança 86% da viewport.
-   */
   start?: string;
-}
-
-interface RevealAnimationState {
-  autoAlpha: number;
-  clearProps: string;
-  duration: number;
-  ease: string;
-  scale?: number;
-  y: number;
-}
-
-interface RevealInitialState {
-  autoAlpha: number;
-  scale?: number;
-  y: number;
 }
 
 interface UseRevealAnimationResult<T extends HTMLElement> {
   containerRef: RefObject<null | T>;
 }
 
-/**
- * Cria reveals individuais para elementos marcados com `data-reveal`
- * dentro do container retornado.
- *
- * Variações disponíveis:
- *
- * data-reveal="default"
- * data-reveal="media"
- * data-reveal="panel"
- *
- * Elementos sem valor, como `data-reveal`, usam a variação "default".
- */
+/** The DOM is visible by default. Motion is applied only after this setup succeeds. */
 export function useRevealAnimation<T extends HTMLElement = HTMLElement>(
   options: RevealAnimationOptions = {},
 ): UseRevealAnimationResult<T> {
   const containerRef = useRef<T>(null);
+  const { disabled = false, duration = 0.9, ease = 'power3.out', markers = false, once = true, selector = '[data-reveal]', start = 'top 84%' } = options;
 
-  const {
-    disabled = false,
-    duration = 0.9,
-    ease = 'power3.out',
-    markers = false,
-    once = true,
-    selector = '[data-reveal]',
-    start = 'top 86%',
-  } = options;
+  useGSAP(() => {
+    const container = containerRef.current;
+    if (!container || disabled) return;
+    const elements = gsap.utils.toArray<HTMLElement>(selector, container);
+    if (!elements.length) return;
 
-  useGSAP(
-    () => {
-      const container = containerRef.current;
-
-      if (!container || disabled) {
+    const media = gsap.matchMedia();
+    media.add({ isMobile: '(max-width: 767px)', reduceMotion: '(prefers-reduced-motion: reduce)' }, (context) => {
+      const { isMobile, reduceMotion } = context.conditions as { isMobile: boolean; reduceMotion: boolean };
+      if (reduceMotion) {
+        gsap.set(elements, { autoAlpha: 1, clearProps: 'transform,opacity,visibility,willChange' });
         return;
       }
 
-      const revealElements = gsap.utils.toArray<HTMLElement>(selector, container);
+      const stagger = isMobile ? 0.065 : 0.085;
+      const distanceFactor = isMobile ? 0.58 : 1;
+      let trigger: ScrollTrigger | undefined;
 
-      if (revealElements.length === 0) {
-        return;
+      try {
+        const timeline = gsap.timeline({
+          defaults: { ease },
+          onComplete: () => {
+            gsap.set(elements, { clearProps: 'transform,opacity,visibility,willChange' });
+            if (once) trigger?.kill();
+          },
+          paused: true,
+        });
+        elements.forEach((element, index) => {
+          const variant = getRevealVariant(element);
+          const initial = getInitialState(variant, distanceFactor);
+          gsap.set(element, { ...initial, willChange: 'transform,opacity' });
+          timeline.to(element, { autoAlpha: 1, duration: duration * (isMobile ? 0.76 : 1), ease, scale: variant === 'default' ? undefined : 1, y: 0 }, index * stagger);
+        });
+        trigger = ScrollTrigger.create({
+          invalidateOnRefresh: true,
+          markers,
+          once,
+          onEnter: () => timeline.play(),
+          onEnterBack: () => { if (!once) timeline.play(); },
+          start,
+          trigger: container,
+        });
+        return () => {
+          trigger?.kill();
+          timeline.kill();
+          gsap.set(elements, { clearProps: 'transform,opacity,visibility,willChange' });
+        };
+      } catch (error) {
+        gsap.set(elements, { clearProps: 'transform,opacity,visibility,willChange' });
+        if (process.env.NODE_ENV !== 'production') console.error('Section reveal was disabled after an initialization error.', error);
       }
+    });
+    return () => media.revert();
+  }, { dependencies: [disabled, duration, ease, markers, once, selector, start], revertOnUpdate: true, scope: containerRef });
 
-      const mediaQuery = gsap.matchMedia();
-
-      mediaQuery.add(
-        {
-          isDesktop: '(min-width: 768px)',
-          isMobile: '(max-width: 767px)',
-          reduceMotion: '(prefers-reduced-motion: reduce)',
-        },
-        (context) => {
-          const { isMobile, reduceMotion } = context.conditions as {
-            isDesktop: boolean;
-            isMobile: boolean;
-            reduceMotion: boolean;
-          };
-
-          /*
-           * Em dispositivos com redução de movimento,
-           * garantimos que todo o conteúdo fique imediatamente
-           * visível e sem transformações.
-           */
-          if (reduceMotion) {
-            gsap.set(revealElements, {
-              autoAlpha: 1,
-              clearProps: 'transform,opacity,visibility',
-            });
-
-            return;
-          }
-
-          revealElements.forEach((element) => {
-            const variant = getRevealVariant(element);
-
-            const initialState = getInitialState(variant, isMobile);
-
-            const animationState = getAnimationState({
-              duration,
-              ease,
-              isMobile,
-              variant,
-            });
-
-            gsap.fromTo(element, initialState, {
-              ...animationState,
-
-              scrollTrigger: {
-                invalidateOnRefresh: true,
-                markers,
-                once,
-                start,
-                toggleActions: once ? 'play none none none' : 'play none none reverse',
-                trigger: element,
-              },
-            });
-          });
-        },
-      );
-
-      /*
-       * O gsap.matchMedia() também possui seu próprio cleanup.
-       * O useGSAP cuida das animações e ScrollTriggers criados
-       * dentro de seu contexto.
-       */
-      return () => {
-        mediaQuery.revert();
-      };
-    },
-    {
-      dependencies: [selector, start, duration, ease, once, disabled, markers],
-      revertOnUpdate: true,
-      scope: containerRef,
-    },
-  );
-
-  return {
-    containerRef,
-  };
+  return { containerRef };
 }
 
-function getAnimationState({
-  duration,
-  ease,
-  isMobile,
-  variant,
-}: {
-  duration: number;
-  ease: string;
-  isMobile: boolean;
-  variant: RevealVariant;
-}): RevealAnimationState {
-  /*
-   * No mobile diminuímos um pouco a duração.
-   * A animação continua elegante, mas responde
-   * mais rapidamente durante a rolagem.
-   */
-  const durationFactor = isMobile ? 0.88 : 1;
-
-  const baseState: RevealAnimationState = {
-    autoAlpha: 1,
-    clearProps: 'transform,opacity,visibility',
-    duration: duration * durationFactor,
-    ease,
-    y: 0,
-  };
-
-  switch (variant) {
-    case 'media':
-    case 'panel':
-      return {
-        ...baseState,
-        scale: 1,
-      };
-
-    case 'default':
-    default:
-      return baseState;
-  }
-}
-
-function getInitialState(variant: RevealVariant, isMobile: boolean): RevealInitialState {
-  const mobileFactor = isMobile ? 0.72 : 1;
-
-  switch (variant) {
-    case 'media':
-      return {
-        autoAlpha: 0,
-        scale: 0.985,
-        y: 30 * mobileFactor,
-      };
-
-    case 'panel':
-      return {
-        autoAlpha: 0,
-        scale: 0.992,
-        y: 38 * mobileFactor,
-      };
-
-    case 'default':
-    default:
-      return {
-        autoAlpha: 0,
-        y: 26 * mobileFactor,
-      };
-  }
+function getInitialState(variant: RevealVariant, factor: number) {
+  if (variant === 'media') return { autoAlpha: 0, scale: 0.985, y: 30 * factor };
+  if (variant === 'panel') return { autoAlpha: 0, scale: 0.992, y: 38 * factor };
+  return { autoAlpha: 0, y: 26 * factor };
 }
 
 function getRevealVariant(element: HTMLElement): RevealVariant {
   const value = element.dataset.reveal;
-
-  if (value === 'media' || value === 'panel' || value === 'default') {
-    return value;
-  }
-
-  return 'default';
+  return value === 'media' || value === 'panel' || value === 'default' ? value : 'default';
 }

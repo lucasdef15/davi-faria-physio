@@ -4,6 +4,7 @@ import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import { type RefObject, useRef } from 'react';
 
+
 gsap.registerPlugin(useGSAP);
 
 interface UseHeroAnimationResult {
@@ -27,11 +28,13 @@ export function useHeroAnimation(): UseHeroAnimationResult {
       const copy = container.querySelector<HTMLElement>('[data-hero-copy]');
       const scrollBadge = container.querySelector<HTMLElement>('[data-hero-scroll]');
 
-      const headingLines = gsap.utils.toArray<HTMLElement>('[data-hero-line]', container);
+      const headingLines = Array.from(container.querySelectorAll<HTMLElement>('[data-hero-line]'));
 
-      const actionItems = gsap.utils.toArray<HTMLElement>('[data-hero-action]', container);
+      const actionItems = Array.from(container.querySelectorAll<HTMLElement>('[data-hero-action]'));
 
-      const indicatorItems = gsap.utils.toArray<HTMLElement>('[data-hero-indicator]', container);
+      const indicatorItems = Array.from(
+        container.querySelectorAll<HTMLElement>('[data-hero-indicator]'),
+      );
 
       const animatedElements = [
         ambient,
@@ -62,10 +65,10 @@ export function useHeroAnimation(): UseHeroAnimationResult {
               autoAlpha: 1,
               clearProps: 'transform,opacity,visibility,willChange',
             });
-
             return;
           }
 
+          try {
           const distance = isMobile ? 14 : 22;
           const lineDuration = isMobile ? 0.78 : 0.94;
 
@@ -201,7 +204,7 @@ export function useHeroAnimation(): UseHeroAnimationResult {
             actionItems,
             {
               autoAlpha: 1,
-              duration: isMobile ? 0.56 : 0.64,
+                duration: isMobile ? 0.56 : 0.64,
               stagger: 0.08,
               y: 0,
             },
@@ -212,8 +215,8 @@ export function useHeroAnimation(): UseHeroAnimationResult {
             indicatorItems,
             {
               autoAlpha: 1,
-              duration: isMobile ? 0.48 : 0.58,
-              stagger: isMobile ? 0.045 : 0.065,
+                duration: isMobile ? 0.48 : 0.58,
+                stagger: isMobile ? 0.045 : 0.065,
               y: 0,
             },
             0.85,
@@ -244,12 +247,19 @@ export function useHeroAnimation(): UseHeroAnimationResult {
             window.cancelAnimationFrame(secondFrameId);
             timeline.kill();
           };
+          } catch (error) {
+        gsap.set(animatedElements, {
+          clearProps: 'transform,opacity,visibility,willChange',
+        });
+
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('Hero animation was disabled after an initialization error.', error);
+        }
+          }
         },
       );
 
-      return () => {
-        mediaQuery.revert();
-      };
+      return () => mediaQuery.revert();
     },
     {
       scope: containerRef,

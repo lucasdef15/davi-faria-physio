@@ -4,6 +4,8 @@ import type { RefObject } from 'react';
 
 import { useEffect } from 'react';
 
+import { subscribeToMediaQuery } from '@/lib/media-query';
+
 interface FlowLineDefinition {
   alpha: number;
   amplitude: number;
@@ -17,6 +19,7 @@ interface FlowLineDefinition {
 }
 
 interface NavigatorWithMemory extends Navigator {
+  connection?: { saveData?: boolean };
   deviceMemory?: number;
 }
 
@@ -183,20 +186,25 @@ export function useBackgroundCanvas({
   mobileFps = 18,
 }: UseBackgroundCanvasOptions): void {
   useEffect(() => {
-    const canvas = canvasRef.current;
-
-    if (!canvas) {
+    if (typeof CanvasRenderingContext2D === 'undefined') {
       return;
     }
 
-    const context = canvas.getContext('2d', {
-      alpha: true,
-      desynchronized: true,
-    });
+    try {
+      const canvas = canvasRef.current;
 
-    if (!context) {
-      return;
-    }
+      if (!canvas) {
+        return;
+      }
+
+      const context = canvas.getContext('2d', {
+        alpha: true,
+        desynchronized: true,
+      });
+
+      if (!context) {
+        return;
+      }
 
     const interactionRoot = interactionRootSelector
       ? canvas.closest<HTMLElement>(interactionRootSelector)
@@ -207,11 +215,16 @@ export function useBackgroundCanvas({
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const navigatorInfo = navigator as NavigatorWithMemory;
-    const processorCount = navigator.hardwareConcurrency ?? 8;
-    const memory = navigatorInfo.deviceMemory ?? 8;
+    const processorCount = navigator.hardwareConcurrency;
+    const memory = navigatorInfo.deviceMemory;
 
-    const isLowPowerDevice = processorCount <= 4 || memory <= 4;
-    const isVeryLowPowerDevice = processorCount <= 2 || memory <= 2;
+    const isLowCapacity =
+      navigatorInfo.connection?.saveData === true ||
+      (processorCount !== undefined && processorCount <= 2) ||
+      (memory !== undefined && memory <= 2);
+    const isMediumCapacity =
+      (processorCount !== undefined && processorCount <= 4) ||
+      (memory !== undefined && memory <= 4);
 
     let width = 0;
     let height = 0;
@@ -235,21 +248,21 @@ export function useBackgroundCanvas({
     const getQualityProfile = (): QualityProfile => {
       const isMobile = mobileQuery.matches;
 
-      if (isVeryLowPowerDevice) {
+      if (isLowCapacity) {
         return {
           dprLimit: 1,
-          fps: 0,
-          particleCount: 0,
-          pointCount: 30,
+          fps: 12,
+          particleCount: 2,
+          pointCount: 28,
         };
       }
 
-      if (isMobile || isLowPowerDevice) {
+      if (isMobile || isMediumCapacity) {
         return {
-          dprLimit: 1.15,
-          fps: mobileFps,
-          particleCount: isLowPowerDevice ? 4 : 7,
-          pointCount: isLowPowerDevice ? 34 : 42,
+          dprLimit: isMobile ? 1.15 : 1.25,
+          fps: isMobile ? Math.min(mobileFps, 16) : Math.min(desktopFps, 20),
+          particleCount: isMobile ? 5 : 6,
+          pointCount: isMobile ? 36 : 42,
         };
       }
 
@@ -577,9 +590,12 @@ export function useBackgroundCanvas({
     });
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    mobileQuery.addEventListener('change', handleMediaChange);
-    finePointerQuery.addEventListener('change', handleMediaChange);
-    reduceMotionQuery.addEventListener('change', handleMediaChange);
+    const unsubscribeMobileQuery = subscribeToMediaQuery(mobileQuery, handleMediaChange);
+    const unsubscribeFinePointerQuery = subscribeToMediaQuery(finePointerQuery, handleMediaChange);
+    const unsubscribeReduceMotionQuery = subscribeToMediaQuery(
+      reduceMotionQuery,
+      handleMediaChange,
+    );
 
     startTimer = window.setTimeout(() => {
       animationEnabled = true;
@@ -605,10 +621,15 @@ export function useBackgroundCanvas({
       interactionRoot?.removeEventListener('pointerleave', resetPointerTarget);
 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      mobileQuery.removeEventListener('change', handleMediaChange);
-      finePointerQuery.removeEventListener('change', handleMediaChange);
-      reduceMotionQuery.removeEventListener('change', handleMediaChange);
+      unsubscribeMobileQuery();
+      unsubscribeFinePointerQuery();
+      unsubscribeReduceMotionQuery();
     };
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Hero canvas was disabled after an initialization error.', error);
+      }
+    }
   }, [canvasRef, desktopFps, interactionRootSelector, mobileFps]);
 }
 

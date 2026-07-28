@@ -2,10 +2,12 @@
 
 import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
-import { useLenis } from 'lenis/react';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
+
+import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
+import { getAnchorScrollTop } from '@/lib/anchor-navigation';
 
 import LogoSVG from '../svg/LogoSVG';
 import MobileHeader from './MobileHeader';
@@ -45,6 +47,7 @@ export default function Header() {
   const surfaceModeRef = useRef<SurfaceMode>('top');
 
   const isNavigatingRef = useRef(false);
+  const navigationTimerRef = useRef<null | number>(null);
   const reduceMotionRef = useRef(false);
 
   const shellScaleSetterRef = useRef<null | QuickSetter>(null);
@@ -238,46 +241,56 @@ export default function Header() {
     },
   );
 
-  const lenis = useLenis(
-    (instance) => {
-      const scroll = Math.max(0, instance.scroll);
+  useBodyScrollLock(isMenuOpen);
+
+  useEffect(() => {
+    return () => {
+      if (navigationTimerRef.current !== null) {
+        window.clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let frameId = 0;
+    let previousScroll = Math.max(0, window.scrollY);
+
+    const syncHeader = () => {
+      frameId = 0;
+
+      const scroll = Math.max(0, window.scrollY);
+      const delta = scroll - previousScroll;
 
       applyCompactProgress(scroll);
-
       setSurfaceMode(scroll > COMPACT_THRESHOLD ? 'compact' : 'top');
 
       if (scroll <= TOP_THRESHOLD) {
         setHeaderMode('top');
-        return;
-      }
-
-      if (reduceMotionRef.current || isMenuOpen || isNavigatingRef.current) {
+      } else if (reduceMotionRef.current || isMenuOpen || isNavigatingRef.current) {
         setHeaderMode('visible');
-        return;
-      }
-
-      const velocity = Math.abs(instance.velocity);
-
-      const isScrollingDown = instance.direction === -1;
-
-      const isScrollingUp = instance.direction === 1;
-
-      if (isScrollingDown && scroll > HIDE_THRESHOLD && velocity > 0.08) {
+      } else if (delta > 2 && scroll > HIDE_THRESHOLD) {
         setHeaderMode('hidden');
-        return;
-      }
-
-      if (isScrollingUp && velocity > 0.04) {
-        setHeaderMode('visible');
-        return;
-      }
-
-      if (headerModeRef.current === 'top') {
+      } else if (delta < -2 || headerModeRef.current === 'top') {
         setHeaderMode('visible');
       }
-    },
-    [applyCompactProgress, isMenuOpen, setHeaderMode, setSurfaceMode],
-  );
+
+      previousScroll = scroll;
+    };
+
+    const handleScroll = () => {
+      if (frameId === 0) {
+        frameId = window.requestAnimationFrame(syncHeader);
+      }
+    };
+
+    syncHeader();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [applyCompactProgress, isMenuOpen, setHeaderMode, setSurfaceMode]);
 
   const navigateToSection = useCallback(
     (href: string) => {
@@ -295,6 +308,10 @@ export default function Header() {
 
       isNavigatingRef.current = true;
 
+      if (navigationTimerRef.current !== null) {
+        window.clearTimeout(navigationTimerRef.current);
+      }
+
       const isHome = href === '#inicio';
 
       setHeaderMode(isHome ? 'top' : 'visible');
@@ -303,31 +320,31 @@ export default function Header() {
         window.history.pushState(null, '', href);
       }
 
-      if (!lenis) {
-        target.scrollIntoView({
-          behavior: reduceMotionRef.current ? 'auto' : 'smooth',
-          block: 'start',
-        });
+      const top = getAnchorScrollTop(
+        target.getBoundingClientRect().top,
+        window.scrollY,
+        isHome ? 0 : 100,
+      );
 
-        isNavigatingRef.current = false;
-        return;
+      try {
+        window.scrollTo({
+          behavior: reduceMotionRef.current ? 'auto' : 'smooth',
+          top,
+        });
+      } catch {
+        target.scrollIntoView({ block: 'start' });
       }
 
-      lenis.scrollTo(target, {
-        force: true,
-        immediate: reduceMotionRef.current,
-        lerp: reduceMotionRef.current ? 1 : 0.095,
-        lock: false,
-        offset: isHome ? 0 : 100,
-
-        onComplete: () => {
+      navigationTimerRef.current = window.setTimeout(
+        () => {
           isNavigatingRef.current = false;
-
-          setHeaderMode(lenis.scroll <= TOP_THRESHOLD ? 'top' : 'visible');
+          navigationTimerRef.current = null;
+          setHeaderMode(window.scrollY <= TOP_THRESHOLD ? 'top' : 'visible');
         },
-      });
+        reduceMotionRef.current ? 0 : 550,
+      );
     },
-    [lenis, setHeaderMode],
+    [setHeaderMode],
   );
 
   const handleDesktopNavigation = useCallback(
@@ -370,41 +387,20 @@ export default function Header() {
       }
     };
 
-    document.body.classList.toggle('menu-open', isMenuOpen);
-
     if (isMenuOpen) {
-      lenis?.stop();
       setHeaderMode('visible');
 
       window.addEventListener('keydown', handleKeyDown);
     } else {
-      lenis?.start();
-
-      const currentScroll = lenis?.scroll ?? window.scrollY;
+      const currentScroll = window.scrollY;
 
       setHeaderMode(currentScroll <= TOP_THRESHOLD ? 'top' : 'visible');
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-
-      document.body.classList.remove('menu-open');
-
-      if (isMenuOpen) {
-        lenis?.start();
-      }
     };
-  }, [isMenuOpen, lenis, setHeaderMode]);
-
-  useEffect(() => {
-    const currentScroll = lenis?.scroll ?? window.scrollY;
-
-    applyCompactProgress(currentScroll);
-
-    setSurfaceMode(currentScroll > COMPACT_THRESHOLD ? 'compact' : 'top');
-
-    setHeaderMode(currentScroll <= TOP_THRESHOLD ? 'top' : 'visible');
-  }, [applyCompactProgress, lenis, setHeaderMode, setSurfaceMode]);
+  }, [isMenuOpen, setHeaderMode]);
 
   return (
     <header
