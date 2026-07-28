@@ -183,6 +183,17 @@
   transform-origin: center;
 }
 
+/* The SVG only spends GPU time while its section is visible. Its static state
+   remains fully rendered for reduced-motion and unsupported-browser fallbacks. */
+[data-breathing-visible='false'] .fw-particle,
+[data-breathing-visible='false'] .fw-ripple,
+[data-breathing-visible='false'] .fw-drift-a,
+[data-breathing-visible='false'] .fw-drift-b,
+[data-breathing-visible='false'] .fw-airflow,
+[data-breathing-visible='false'] .fw-restriction {
+  animation-play-state: paused;
+}
+
 .fw-console {
   isolation: isolate;
 }
@@ -217,6 +228,21 @@
 
 .fw-rise {
   animation: fw-rise 0.72s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Canvas exposes a local low-capacity tier; the hero keeps its composition while
+   reducing the most expensive translucent layers on constrained devices. */
+[data-hero-quality='low'] [data-hero-canvas] {
+  opacity: 0.72;
+}
+
+[data-hero-quality='low'] [data-hero-glow] {
+  filter: blur(24px);
+  opacity: 0.3;
+}
+
+[data-hero-quality='low'] [data-hero-eyebrow] {
+  backdrop-filter: blur(4px);
 }
 
 @media (prefers-reduced-motion: reduce) {

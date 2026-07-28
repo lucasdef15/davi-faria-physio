@@ -4,6 +4,7 @@ import { useGSAP } from '@gsap/react';
 import { gsap } from 'gsap';
 import { type RefObject, useRef } from 'react';
 
+import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
 
 gsap.registerPlugin(useGSAP);
 
@@ -68,194 +69,88 @@ export function useHeroAnimation(): UseHeroAnimationResult {
             return;
           }
 
-          try {
-          const distance = isMobile ? 14 : 22;
-          const lineDuration = isMobile ? 0.78 : 0.94;
+          let animationFrame = 0;
+          let entranceTimeline: gsap.core.Timeline | null = null;
+          let fallbackTimer = 0;
 
-          gsap.set(animatedElements, {
-            willChange: 'transform, opacity',
-          });
-
-          if (ambient) {
-            gsap.set(ambient, {
-              autoAlpha: 0,
-              scale: 1.025,
+          const revealImmediately = () => {
+            gsap.set(animatedElements, {
+              autoAlpha: 1,
+              clearProps: 'transform,opacity,visibility,willChange',
             });
-          }
+          };
 
-          if (canvas) {
-            gsap.set(canvas, {
-              autoAlpha: 0,
-              scale: 1.018,
-            });
-          }
+          const startAnimation = () => {
+            try {
+              const distance = isMobile ? 14 : 22;
+              const lineDuration = isMobile ? 0.78 : 0.94;
 
-          if (eyebrow) {
-            gsap.set(eyebrow, {
-              autoAlpha: 0,
-              y: distance * 0.65,
-            });
-          }
+              gsap.set(animatedElements, { willChange: 'transform, opacity' });
 
-          gsap.set(headingLines, {
-            autoAlpha: 0,
-            yPercent: 108,
-          });
+              if (ambient) gsap.set(ambient, { autoAlpha: 0, scale: 1.025 });
+              if (canvas) gsap.set(canvas, { autoAlpha: 0, scale: 1.018 });
+              if (eyebrow) gsap.set(eyebrow, { autoAlpha: 0, y: distance * 0.65 });
+              gsap.set(headingLines, { autoAlpha: 0, yPercent: 108 });
+              if (copy) gsap.set(copy, { autoAlpha: 0, y: distance });
+              gsap.set(actionItems, { autoAlpha: 0, y: distance * 0.8 });
+              gsap.set(indicatorItems, { autoAlpha: 0, y: distance * 0.65 });
+              if (scrollBadge) gsap.set(scrollBadge, { autoAlpha: 0, y: 10 });
 
-          if (copy) {
-            gsap.set(copy, {
-              autoAlpha: 0,
-              y: distance,
-            });
-          }
-
-          gsap.set(actionItems, {
-            autoAlpha: 0,
-            y: distance * 0.8,
-          });
-
-          gsap.set(indicatorItems, {
-            autoAlpha: 0,
-            y: distance * 0.65,
-          });
-
-          if (scrollBadge) {
-            gsap.set(scrollBadge, {
-              autoAlpha: 0,
-              y: 10,
-            });
-          }
-
-          const timeline = gsap.timeline({
-            defaults: {
-              ease: 'power3.out',
-            },
-            onComplete: () => {
-              gsap.set(animatedElements, {
-                clearProps: 'transform,opacity,visibility,willChange',
+              entranceTimeline = gsap.timeline({
+                defaults: { ease: 'power3.out' },
+                onComplete: revealImmediately,
               });
-            },
-            paused: true,
-          });
 
-          if (ambient) {
-            timeline.to(
-              ambient,
-              {
-                autoAlpha: 1,
-                duration: 1.15,
-                ease: 'power2.out',
-                scale: 1,
-              },
-              0,
-            );
-          }
+              if (ambient) {
+                entranceTimeline.to(ambient, { autoAlpha: 1, duration: 1.15, ease: 'power2.out', scale: 1 }, 0);
+              }
 
-          if (canvas) {
-            timeline.to(
-              canvas,
-              {
-                autoAlpha: 1,
-                duration: 1.35,
-                ease: 'power2.out',
-                scale: 1,
-              },
-              0.04,
-            );
-          }
+              if (canvas) {
+                entranceTimeline.to(canvas, { autoAlpha: 1, duration: 1.35, ease: 'power2.out', scale: 1 }, 0.04);
+              }
 
-          if (eyebrow) {
-            timeline.to(
-              eyebrow,
-              {
-                autoAlpha: 1,
-                duration: 0.58,
-                y: 0,
-              },
-              0.12,
-            );
-          }
+              if (eyebrow) entranceTimeline.to(eyebrow, { autoAlpha: 1, duration: 0.58, y: 0 }, 0.12);
 
-          timeline.to(
-            headingLines,
-            {
-              autoAlpha: 1,
-              duration: lineDuration,
-              ease: 'expo.out',
-              stagger: isMobile ? 0.075 : 0.095,
-              yPercent: 0,
-            },
-            0.2,
-          );
+              entranceTimeline.to(
+                headingLines,
+                { autoAlpha: 1, duration: lineDuration, ease: 'expo.out', stagger: isMobile ? 0.075 : 0.095, yPercent: 0 },
+                0.2,
+              );
 
-          if (copy) {
-            timeline.to(
-              copy,
-              {
-                autoAlpha: 1,
-                duration: isMobile ? 0.62 : 0.72,
-                y: 0,
-              },
-              0.58,
-            );
-          }
+              if (copy) entranceTimeline.to(copy, { autoAlpha: 1, duration: isMobile ? 0.62 : 0.72, y: 0 }, 0.58);
 
-          timeline.to(
-            actionItems,
-            {
-              autoAlpha: 1,
-                duration: isMobile ? 0.56 : 0.64,
-              stagger: 0.08,
-              y: 0,
-            },
-            0.7,
-          );
+              entranceTimeline.to(
+                actionItems,
+                { autoAlpha: 1, duration: isMobile ? 0.56 : 0.64, stagger: 0.08, y: 0 },
+                0.7,
+              );
+              entranceTimeline.to(
+                indicatorItems,
+                { autoAlpha: 1, duration: isMobile ? 0.48 : 0.58, stagger: isMobile ? 0.045 : 0.065, y: 0 },
+                0.85,
+              );
 
-          timeline.to(
-            indicatorItems,
-            {
-              autoAlpha: 1,
-                duration: isMobile ? 0.48 : 0.58,
-                stagger: isMobile ? 0.045 : 0.065,
-              y: 0,
-            },
-            0.85,
-          );
+              if (scrollBadge) entranceTimeline.to(scrollBadge, { autoAlpha: 1, duration: 0.52, y: 0 }, 1.02);
+            } catch (error) {
+              revealImmediately();
 
-          if (scrollBadge) {
-            timeline.to(
-              scrollBadge,
-              {
-                autoAlpha: 1,
-                duration: 0.52,
-                y: 0,
-              },
-              1.02,
-            );
-          }
+              if (process.env.NODE_ENV !== 'production') {
+                console.error('Hero animation was disabled after an initialization error.', error);
+              }
+            }
+          };
 
-          let secondFrameId = 0;
-
-          const firstFrameId = window.requestAnimationFrame(() => {
-            secondFrameId = window.requestAnimationFrame(() => {
-              timeline.play(0);
-            });
-          });
+          animationFrame = scheduleFrame(startAnimation);
+          fallbackTimer = window.setTimeout(() => {
+            if (!entranceTimeline) revealImmediately();
+          }, 900);
 
           return () => {
-            window.cancelAnimationFrame(firstFrameId);
-            window.cancelAnimationFrame(secondFrameId);
-            timeline.kill();
+            cancelScheduledFrame(animationFrame);
+            window.clearTimeout(fallbackTimer);
+            entranceTimeline?.kill();
+            revealImmediately();
           };
-          } catch (error) {
-        gsap.set(animatedElements, {
-          clearProps: 'transform,opacity,visibility,willChange',
-        });
-
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('Hero animation was disabled after an initialization error.', error);
-        }
-          }
         },
       );
 

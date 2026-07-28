@@ -14,6 +14,9 @@ import {
   useRef,
 } from 'react';
 
+import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
+import { getMediaQuery } from '@/lib/media-query';
+
 gsap.registerPlugin(useGSAP);
 
 interface MobileHeaderProps {
@@ -43,7 +46,7 @@ export default function MobileHeader({
 
       const menuItems = Array.from(menu.querySelectorAll<HTMLElement>('[data-mobile-menu-item]'));
       const cta = menu.querySelector<HTMLElement>('[data-mobile-menu-cta]');
-      reduceMotionRef.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      reduceMotionRef.current = getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false;
 
       gsap.set(menu, {
         autoAlpha: 0,
@@ -107,14 +110,14 @@ export default function MobileHeader({
   useEffect(() => {
     let frameId: number | undefined;
     if (isOpen) {
-      frameId = window.requestAnimationFrame(() => {
+      frameId = scheduleFrame(() => {
         menuRef.current?.querySelector<HTMLElement>('[data-mobile-focusable]')?.focus({ preventScroll: true });
       });
     } else if (wasOpenRef.current) {
       triggerRef.current?.focus({ preventScroll: true });
     }
     wasOpenRef.current = isOpen;
-    return () => { if (frameId !== undefined) window.cancelAnimationFrame(frameId); };
+    return () => { if (frameId !== undefined) cancelScheduledFrame(frameId); };
   }, [isOpen, triggerRef]);
 
   const handleNavigation = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -122,7 +125,7 @@ export default function MobileHeader({
     event.preventDefault();
     event.stopPropagation();
     setIsMenuOpen(false);
-    window.requestAnimationFrame(() => onNavigate(href));
+    scheduleFrame(() => onNavigate(href));
   }, [onNavigate, setIsMenuOpen]);
 
   const trapFocus = useCallback((event: KeyboardEvent<HTMLDivElement>) => {

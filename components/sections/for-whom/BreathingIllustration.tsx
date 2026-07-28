@@ -55,7 +55,12 @@ const DEFAULT_VARS = {
 
 export default function BreathingIllustration({ className, stageRef }: BreathingIllustrationProps) {
   return (
-    <div className={className} ref={stageRef} style={DEFAULT_VARS}>
+    <div
+      className={className}
+      data-breathing-visible="false"
+      ref={stageRef}
+      style={DEFAULT_VARS}
+    >
       <div className="relative isolate h-full w-full overflow-hidden">
         <svg
           aria-hidden="true"

@@ -1,3 +1,5 @@
+import { getMediaQuery } from '@/lib/media-query';
+
 import type { Symptom } from './symptoms';
 
 interface SymptomCardProps {
@@ -50,7 +52,7 @@ export default function SymptomCard({
       data-scroll-id={symptom.id}
       onBlur={onLeave}
       onClick={(event) => {
-        if (window.matchMedia('(max-width: 639px)').matches) {
+        if (getMediaQuery('(max-width: 639px)').matches) {
           event.currentTarget.scrollIntoView({
             behavior: 'smooth',
             block: 'nearest',
