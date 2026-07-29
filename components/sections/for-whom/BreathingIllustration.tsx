@@ -326,6 +326,7 @@ export default function BreathingIllustration({ className, stageRef }: Breathing
             />
 
             <g
+              data-breathing-filter
               style={{
                 filter: 'url(#fw-lung-glow)',
                 transform: 'scale(var(--lung-scale, 1))',

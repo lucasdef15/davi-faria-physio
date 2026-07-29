@@ -34,6 +34,9 @@ export interface CanvasQualityProfile {
   dprLimit: number;
   fps: number;
   interactionEnabled: boolean;
+  maxHeight: number;
+  maxPixels: number;
+  maxWidth: number;
   particleCount: number;
   pointCount: number;
   simplifiedAmbient: boolean;

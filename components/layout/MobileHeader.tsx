@@ -17,6 +17,7 @@ import {
 import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
 import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery } from '@/lib/media-query';
+import { getPerformanceTier } from '@/lib/performance-tier';
 
 gsap.registerPlugin(useGSAP);
 
@@ -50,6 +51,7 @@ export default function MobileHeader({
       reduceMotionRef.current =
         (getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false) ||
         getIosDiagnosticOptions().disableAllMotion;
+      menu.dataset.performanceTier = getPerformanceTier(navigator, window.devicePixelRatio || 1);
 
       gsap.set(menu, {
         autoAlpha: 0,
@@ -82,6 +84,7 @@ export default function MobileHeader({
         timeline.kill();
         gsap.killTweensOf([menu, ...menuItems, cta]);
         timelineRef.current = null;
+        delete menu.dataset.performanceTier;
       };
     },
     { dependencies: [links.length], revertOnUpdate: true, scope: menuRef },
@@ -142,7 +145,7 @@ export default function MobileHeader({
   }, [isOpen]);
 
   return (
-    <div aria-hidden={!isOpen} className="invisible absolute top-[calc(100%+0.5rem)] right-0 left-0 z-[70] max-h-[calc(100vh-7rem)] max-h-[calc(100dvh-7rem)] touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain rounded-[1.4rem] border border-slate-900/7 bg-white/92 shadow-[0_2px_4px_rgba(15,23,42,0.04),0_24px_64px_-24px_rgba(15,23,42,0.28)] backdrop-blur-2xl backdrop-saturate-150 will-change-[transform,opacity,clip-path] lg:hidden" id="mobile-menu" inert={!isOpen} onKeyDown={trapFocus} ref={menuRef}>
+    <div aria-hidden={!isOpen} className="invisible absolute top-[calc(100%+0.5rem)] right-0 left-0 z-[70] max-h-[calc(100vh-7rem)] max-h-[calc(100dvh-7rem)] touch-pan-y overflow-x-hidden overflow-y-auto overscroll-contain rounded-[1.4rem] border border-slate-900/7 bg-white/92 shadow-[0_2px_4px_rgba(15,23,42,0.04),0_24px_64px_-24px_rgba(15,23,42,0.28)] backdrop-blur-2xl backdrop-saturate-150 will-change-[transform,opacity,clip-path] lg:hidden" data-mobile-menu-surface id="mobile-menu" inert={!isOpen} onKeyDown={trapFocus} ref={menuRef}>
       <nav aria-label="Navegação mobile" className="px-5 pt-4 pb-5 sm:px-6">
         <div className="px-1 pt-1 pb-2" data-mobile-menu-item>
           <span className="text-[10px] font-semibold tracking-[0.18em] text-slate-400 uppercase">Navegação</span>

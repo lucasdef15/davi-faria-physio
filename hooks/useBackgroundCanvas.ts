@@ -16,6 +16,7 @@ import { DESKTOP_FLOW_LINES, INTERACTIVE_SELECTOR, MOBILE_FLOW_LINES, POINTER_MO
 import {
   getCanvasCapability,
   getCanvasQualityProfile,
+  getCanvasRenderScale,
   getInitialCanvasQualityTier,
   reduceCanvasQuality,
 } from '@/hooks/hero-canvas/quality';
@@ -113,7 +114,7 @@ export function useBackgroundCanvas({
       const canAnimate =
         typeof window.requestAnimationFrame === 'function' &&
         typeof window.cancelAnimationFrame === 'function';
-      const capability = getCanvasCapability(navigator);
+      const capability = getCanvasCapability(navigator, window.devicePixelRatio || 1);
 
       let width = 0;
       let height = 0;
@@ -127,7 +128,7 @@ export function useBackgroundCanvas({
       let isIntersecting = true;
       let animationEnabled = false;
       let slowDrawCount = 0;
-      let qualityTier: CanvasQualityTier = getInitialCanvasQualityTier(capability, isMobileViewport());
+      let qualityTier: CanvasQualityTier = getInitialCanvasQualityTier(capability);
       let particles = createParticles(0, 0, 0);
       let pointBuffers: CanvasPoint[][] = [];
       let staticAmbient: CanvasStaticAmbient | null = null;
@@ -138,6 +139,7 @@ export function useBackgroundCanvas({
       let pointerOffsetX = 0;
       let pointerOffsetY = 0;
       let reportedFirstFrame = false;
+      let renderedConfiguration = '';
 
       const pulseSample: CanvasPulseSample = { ...INITIAL_PULSE_SAMPLE };
       const markerPoint: CanvasPoint = { ...INITIAL_POINT };
@@ -150,7 +152,7 @@ export function useBackgroundCanvas({
       }
 
       const lowerQualityForViewport = () => {
-        const viewportTier = getInitialCanvasQualityTier(capability, isMobileViewport());
+        const viewportTier = getInitialCanvasQualityTier(capability);
 
         if (viewportTier === 'low' && qualityTier !== 'low') {
           qualityTier = 'low';
@@ -180,9 +182,23 @@ export function useBackgroundCanvas({
         height = Math.max(1, Math.round(bounds.height));
 
         const quality = getQualityProfile();
-        const dpr = Math.min(window.devicePixelRatio || 1, quality.dprLimit);
+        const dpr = getCanvasRenderScale(width, height, window.devicePixelRatio || 1, quality);
         const pixelWidth = Math.max(1, Math.round(width * dpr));
         const pixelHeight = Math.max(1, Math.round(height * dpr));
+        const nextConfiguration = [
+          qualityTier,
+          width,
+          height,
+          pixelWidth,
+          pixelHeight,
+          isMobileViewport(),
+        ].join(':');
+
+        if (renderedConfiguration === nextConfiguration) {
+          return;
+        }
+
+        renderedConfiguration = nextConfiguration;
 
         if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
           canvas.width = pixelWidth;
@@ -321,10 +337,11 @@ export function useBackgroundCanvas({
       };
 
       const recordDrawCost = (drawCost: number) => {
-        const threshold = qualityTier === 'high' ? 18 : 15;
+        const threshold = qualityTier === 'high' ? 18 : 14;
+        const framesBeforeReduction = qualityTier === 'high' ? 4 : 3;
         slowDrawCount = drawCost > threshold ? slowDrawCount + 1 : Math.max(0, slowDrawCount - 1);
 
-        if (slowDrawCount < 6 || qualityTier === 'low') {
+        if (slowDrawCount < framesBeforeReduction || qualityTier === 'low') {
           return;
         }
 
@@ -522,6 +539,9 @@ export function useBackgroundCanvas({
             interactionRoot.dataset.heroQuality = previousHeroQuality;
           }
         }
+
+        canvas.width = 0;
+        canvas.height = 0;
       };
     } catch (error) {
       if (process.env.NODE_ENV !== 'production') {
