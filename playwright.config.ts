@@ -42,11 +42,6 @@ export default defineConfig({
           height: 640,
         },
 
-        screen: {
-          width: 360,
-          height: 640,
-        },
-
         deviceScaleFactor: 1,
         hasTouch: true,
         isMobile: true,
