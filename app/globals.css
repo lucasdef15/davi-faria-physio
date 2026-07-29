@@ -245,6 +245,28 @@
   backdrop-filter: blur(4px);
 }
 
+[data-performance-tier='medium'] [data-header-surface] {
+  backdrop-filter: blur(18px) saturate(135%) !important;
+}
+
+[data-performance-tier='low'] [data-header-surface],
+[data-performance-tier='low'][data-mobile-menu-surface] {
+  backdrop-filter: blur(10px) saturate(125%) !important;
+}
+
+[data-breathing-quality='low'] [data-breathing-filter] {
+  filter: none;
+}
+
+[data-breathing-quality='low'] .fw-particle,
+[data-breathing-quality='low'] .fw-ripple,
+[data-breathing-quality='low'] .fw-drift-a,
+[data-breathing-quality='low'] .fw-drift-b,
+[data-breathing-quality='low'] .fw-airflow,
+[data-breathing-quality='low'] .fw-restriction {
+  animation-play-state: paused;
+}
+
 /* These switches exist only behind ?diag=ios. They let a physical-device test
    remove expensive compositing or motion without changing the normal page. */
 html[data-ios-diagnostic-filters='off'] *,

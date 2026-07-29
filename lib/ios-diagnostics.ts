@@ -10,6 +10,7 @@ export interface IosDiagnosticOptions {
   disableCanvas: boolean;
   disableFilters: boolean;
   disableHeroMotion: boolean;
+  disableScrollTriggers: boolean;
   enabled: boolean;
   staticOnly: boolean;
 }
@@ -38,6 +39,7 @@ const DEFAULT_OPTIONS: IosDiagnosticOptions = {
   disableCanvas: false,
   disableFilters: false,
   disableHeroMotion: false,
+  disableScrollTriggers: false,
   enabled: false,
   staticOnly: false,
 };
@@ -49,20 +51,46 @@ export function getIosDiagnosticOptions(search?: string): IosDiagnosticOptions {
     search ?? (typeof window === 'undefined' ? '' : window.location.search),
   );
 
-  if (params.get('diag') !== 'ios') {
+  const performanceScenario = params.get('perf');
+  const isIosDiagnostic = params.get('diag') === 'ios';
+
+  if (!isIosDiagnostic && !performanceScenario) {
     return DEFAULT_OPTIONS;
   }
 
-  const staticOnly = params.get('static') === '1';
-  const disableAllMotion = staticOnly || params.get('allMotion') === '0';
+  const staticOnly =
+    params.get('static') === '1' || performanceScenario === 'essential-only';
+  const disableAllMotion =
+    staticOnly ||
+    params.get('allMotion') === '0' ||
+    performanceScenario === 'static-effects';
 
   return {
     disableAllMotion,
-    disableBelowFoldRuntime: staticOnly || params.get('belowFold') === '0',
-    disableBreathing: staticOnly || disableAllMotion || params.get('breathing') === '0',
-    disableCanvas: staticOnly || disableAllMotion || params.get('canvas') === '0',
-    disableFilters: staticOnly || params.get('filters') === '0',
-    disableHeroMotion: staticOnly || disableAllMotion || params.get('heroMotion') === '0',
+    disableBelowFoldRuntime:
+      staticOnly ||
+      params.get('belowFold') === '0' ||
+      performanceScenario === 'no-below-fold-motion',
+    disableBreathing:
+      staticOnly ||
+      disableAllMotion ||
+      params.get('breathing') === '0' ||
+      performanceScenario === 'no-breathing-motion',
+    disableCanvas:
+      staticOnly ||
+      disableAllMotion ||
+      params.get('canvas') === '0' ||
+      performanceScenario === 'no-canvas',
+    disableFilters:
+      staticOnly ||
+      params.get('filters') === '0' ||
+      performanceScenario === 'no-filters',
+    disableHeroMotion:
+      staticOnly ||
+      disableAllMotion ||
+      params.get('heroMotion') === '0' ||
+      performanceScenario === 'no-hero-motion',
+    disableScrollTriggers: performanceScenario === 'no-scroll-trigger',
     enabled: true,
     staticOnly,
   };

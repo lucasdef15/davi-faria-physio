@@ -7,6 +7,7 @@ import { useEffect, useRef } from 'react';
 import { BreathingProfile, RGB } from '@/components/sections/for-whom/symptoms';
 import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery, subscribeToMediaQuery } from '@/lib/media-query';
+import { getPerformanceTier, type PerformanceTier } from '@/lib/performance-tier';
 
 interface AnimatedState {
   breathDepth: number;
@@ -52,6 +53,7 @@ export function useBreathingAnimation(
     const mediaQuery = getMediaQuery('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion = mediaQuery?.matches ?? false;
     const diagnostics = getIosDiagnosticOptions();
+    let performanceTier = getPerformanceTier(navigator, window.devicePixelRatio || 1);
 
     if (
       prefersReducedMotion ||
@@ -66,6 +68,8 @@ export function useBreathingAnimation(
       applyStaticProfile(el, profileRef.current);
       return;
     }
+
+    el.dataset.breathingQuality = performanceTier;
 
     const initial = profileRef.current;
     const state: AnimatedState = {
@@ -90,8 +94,17 @@ export function useBreathingAnimation(
     let isIntersecting = false;
     let isRunning = false;
     let last = getNow();
+    let slowFrameCount = 0;
 
     const frame = (now: number) => {
+      const frameInterval = getFrameInterval(performanceTier);
+
+      if (frameInterval > 0 && now - last < frameInterval) {
+        if (isRunning) raf = requestAnimationFrame(frame);
+        return;
+      }
+
+      const frameStartedAt = getNow();
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
 
@@ -153,6 +166,20 @@ export function useBreathingAnimation(
       s.setProperty('--c2g', Math.round(g2).toString());
       s.setProperty('--c2b', Math.round(b2).toString());
 
+      if (performanceTier !== 'low') {
+        const frameCost = getNow() - frameStartedAt;
+        const slowFrame =
+          frameCost > (performanceTier === 'high' ? 12 : 10) ||
+          (performanceTier === 'high' && dt >= 0.05);
+        slowFrameCount = slowFrame ? slowFrameCount + 1 : Math.max(0, slowFrameCount - 1);
+
+        if (slowFrameCount >= 3) {
+          performanceTier = performanceTier === 'high' ? 'medium' : 'low';
+          slowFrameCount = 0;
+          el.dataset.breathingQuality = performanceTier;
+        }
+      }
+
       if (isRunning) raf = requestAnimationFrame(frame);
     };
 
@@ -211,6 +238,7 @@ export function useBreathingAnimation(
       observer?.disconnect();
       stop();
       setBreathingMotionState(el, false);
+      delete el.dataset.breathingQuality;
     };
   }, [targetRef]);
 }
@@ -246,6 +274,12 @@ function applyStaticProfile(el: HTMLElement, profile: BreathingProfile): void {
 
 function clamp(x: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, x));
+}
+
+function getFrameInterval(tier: PerformanceTier): number {
+  if (tier === 'low') return 1_000 / 12;
+  if (tier === 'medium') return 1_000 / 20;
+  return 0;
 }
 
 function getNow(): number {

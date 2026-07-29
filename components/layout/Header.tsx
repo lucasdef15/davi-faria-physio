@@ -11,6 +11,7 @@ import { getAnchorScrollTop } from '@/lib/anchor-navigation';
 import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
 import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery } from '@/lib/media-query';
+import { getPerformanceTier } from '@/lib/performance-tier';
 
 import LogoSVG from '../svg/LogoSVG';
 import MobileHeader from './MobileHeader';
@@ -149,6 +150,7 @@ export default function Header() {
       reduceMotionRef.current =
         (getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false) ||
         getIosDiagnosticOptions().disableAllMotion;
+      header.dataset.performanceTier = getPerformanceTier(navigator, window.devicePixelRatio || 1);
 
       gsap.set(header, {
         force3D: true,
@@ -239,6 +241,7 @@ export default function Header() {
         contentPaddingTopSetterRef.current = null;
         contentPaddingBottomSetterRef.current = null;
         logoScaleSetterRef.current = null;
+        delete header.dataset.performanceTier;
       };
     },
     {
@@ -416,6 +419,7 @@ export default function Header() {
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 rounded-[1.4rem] border border-white/45 bg-white/50 shadow-[0_1px_2px_rgba(15,23,42,0.025),0_12px_36px_-24px_rgba(15,23,42,0.14)] backdrop-blur-2xl backdrop-saturate-150 will-change-transform"
+          data-header-surface
           ref={shellRef}
         />
 

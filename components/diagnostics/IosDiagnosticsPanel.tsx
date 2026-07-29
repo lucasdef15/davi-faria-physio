@@ -96,7 +96,7 @@ export default function IosDiagnosticsPanel({ options }: IosDiagnosticsPanelProp
       data-ios-diagnostics
     >
       <div className="mb-2 flex items-center justify-between gap-3">
-        <strong>Diagnóstico iOS</strong>
+        <strong>Diagnóstico de desempenho</strong>
         <button className="rounded border border-slate-600 px-2 py-1" onClick={copySnapshot} type="button">
           Copiar
         </button>

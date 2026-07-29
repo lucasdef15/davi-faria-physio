@@ -6,12 +6,15 @@ import test from 'node:test';
 import {
   getCanvasCapability,
   getCanvasQualityProfile,
+  getCanvasRenderScale,
   getInitialCanvasQualityTier,
   reduceCanvasQuality,
 } from '../hooks/hero-canvas/quality.ts';
 import { getAnchorScrollTop } from '../lib/anchor-navigation.ts';
 import { cancelScheduledFrame, scheduleFrame } from '../lib/animation-frame.ts';
+import { getIosDiagnosticOptions } from '../lib/ios-diagnostics.ts';
 import { getMediaQuery, subscribeToMediaQuery } from '../lib/media-query.ts';
+import { getPerformanceTier } from '../lib/performance-tier.ts';
 import { lockDocumentScroll } from '../lib/scroll-lock.ts';
 import { getStructuredData } from '../lib/seo.ts';
 import { getContentLastModified, isPreviewDeployment, resolveSiteUrl } from '../lib/site.ts';
@@ -28,13 +31,15 @@ test('keeps the hero canvas on mobile while adapting quality progressively', () 
     { deviceMemory: 2, hardwareConcurrency: 2 } as unknown as Navigator,
   );
 
-  assert.equal(getInitialCanvasQualityTier(highCapability, false), 'high');
-  assert.equal(getInitialCanvasQualityTier(highCapability, true), 'medium');
-  assert.equal(getInitialCanvasQualityTier(lowCapability, true), 'low');
+  assert.equal(getInitialCanvasQualityTier(highCapability), 'high');
+  assert.equal(getInitialCanvasQualityTier(lowCapability), 'low');
   assert.deepEqual(getCanvasQualityProfile('high', false, 30, 18), {
     dprLimit: 1.5,
     fps: 30,
     interactionEnabled: true,
+    maxHeight: 1_180,
+    maxPixels: 2_000_000,
+    maxWidth: 1_920,
     particleCount: 11,
     pointCount: 62,
     simplifiedAmbient: false,
@@ -43,6 +48,9 @@ test('keeps the hero canvas on mobile while adapting quality progressively', () 
     dprLimit: 1.15,
     fps: 16,
     interactionEnabled: true,
+    maxHeight: 960,
+    maxPixels: 900_000,
+    maxWidth: 1_440,
     particleCount: 5,
     pointCount: 36,
     simplifiedAmbient: false,
@@ -51,6 +59,9 @@ test('keeps the hero canvas on mobile while adapting quality progressively', () 
     dprLimit: 1,
     fps: 12,
     interactionEnabled: false,
+    maxHeight: 720,
+    maxPixels: 420_000,
+    maxWidth: 1_024,
     particleCount: 2,
     pointCount: 28,
     simplifiedAmbient: true,
@@ -58,6 +69,31 @@ test('keeps the hero canvas on mobile while adapting quality progressively', () 
   assert.equal(reduceCanvasQuality('high'), 'medium');
   assert.equal(reduceCanvasQuality('medium'), 'low');
   assert.equal(reduceCanvasQuality('low'), 'low');
+  assert.equal(
+    getCanvasRenderScale(1_500, 1_000, 2, getCanvasQualityProfile('high', false, 30, 18)),
+    Math.sqrt(2_000_000 / (1_500 * 1_000)),
+  );
+});
+
+test('uses capability signals locally without treating an absent memory hint as high capacity', () => {
+  assert.equal(getPerformanceTier({ hardwareConcurrency: 2 }, 1), 'low');
+  assert.equal(getPerformanceTier({ hardwareConcurrency: 4 }, 1), 'medium');
+  assert.equal(getPerformanceTier({ hardwareConcurrency: 6 }, 3), 'medium');
+  assert.equal(getPerformanceTier({ hardwareConcurrency: 8 }, 3), 'high');
+  assert.equal(getPerformanceTier(undefined, 3), 'medium');
+  assert.equal(getPerformanceTier(undefined, 1), 'high');
+});
+
+test('maps performance diagnostics to one isolated subsystem at a time', () => {
+  assert.equal(getIosDiagnosticOptions('?perf=baseline').enabled, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-canvas').disableCanvas, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-hero-motion').disableHeroMotion, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-scroll-trigger').disableScrollTriggers, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-filters').disableFilters, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-breathing-motion').disableBreathing, true);
+  assert.equal(getIosDiagnosticOptions('?perf=no-below-fold-motion').disableBelowFoldRuntime, true);
+  assert.equal(getIosDiagnosticOptions('?perf=static-effects').disableAllMotion, true);
+  assert.equal(getIosDiagnosticOptions('?perf=essential-only').staticOnly, true);
 });
 
 test('keeps animation fallbacks local and cleans canvas lifecycle resources', () => {
@@ -83,10 +119,13 @@ test('keeps animation fallbacks local and cleans canvas lifecycle resources', ()
   assert.match(canvasSource, /typeof window\.requestAnimationFrame === 'function'/);
   assert.match(canvasSource, /orientationchange/);
   assert.match(canvasSource, /cancelAnimationFrame\(animationFrame\)/);
+  assert.match(canvasSource, /getCanvasRenderScale/);
+  assert.match(canvasSource, /canvas\.width = 0/);
   assert.match(canvasSource, /reduceCanvasQuality/);
   assert.match(heroMotionSource, /revealImmediately/);
   assert.match(heroMotionSource, /window\.setTimeout/);
   assert.match(revealSource, /trigger\?\.kill\(\)/);
+  assert.match(revealSource, /new IntersectionObserver/);
   assert.doesNotMatch(revealSource, /ScrollTrigger\.killAll/);
   assert.match(breathingSource, /typeof IntersectionObserver !== 'function'/);
   assert.match(breathingSource, /typeof requestAnimationFrame !== 'function'/);
