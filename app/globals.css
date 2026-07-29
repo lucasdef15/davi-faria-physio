@@ -245,6 +245,33 @@
   backdrop-filter: blur(4px);
 }
 
+/* These switches exist only behind ?diag=ios. They let a physical-device test
+   remove expensive compositing or motion without changing the normal page. */
+html[data-ios-diagnostic-filters='off'] *,
+html[data-ios-diagnostic-filters='off'] *::before,
+html[data-ios-diagnostic-filters='off'] *::after {
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+html[data-ios-diagnostic-breathing='off'] .fw-particle,
+html[data-ios-diagnostic-breathing='off'] .fw-ripple,
+html[data-ios-diagnostic-breathing='off'] .fw-drift-a,
+html[data-ios-diagnostic-breathing='off'] .fw-drift-b,
+html[data-ios-diagnostic-breathing='off'] .fw-airflow,
+html[data-ios-diagnostic-breathing='off'] .fw-restriction,
+html[data-ios-diagnostic-below-fold='off'] .fw-rise {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+
+html[data-ios-diagnostic-motion='off'] *,
+html[data-ios-diagnostic-motion='off'] *::before,
+html[data-ios-diagnostic-motion='off'] *::after {
+  animation-play-state: paused !important;
+  transition-duration: 0s !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fw-particle,
   .fw-ripple,

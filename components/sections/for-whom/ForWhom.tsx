@@ -8,12 +8,16 @@ import { useRevealAnimation } from '@/components/motion/useRevealAnimation';
 import { useActiveSymptom } from '@/hooks/useActiveSymptom';
 import { useBreathingAnimation } from '@/hooks/useBreathingAnimation';
 import { useHorizontalScroll } from '@/hooks/useHorizontalScroll';
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 
 import BreathingIllustration from './BreathingIllustration';
 import SymptomCard from './SymptomCard';
 import { SYMPTOMS } from './symptoms';
 
 export default function ForWhom() {
+  const diagnostics = getIosDiagnosticOptions();
+  const disableBelowFoldRuntime =
+    diagnostics.disableAllMotion || diagnostics.disableBelowFoldRuntime;
   const stageRef = useRef<HTMLDivElement>(null);
   const symptomsRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +54,7 @@ export default function ForWhom() {
   );
 
   const horizontalScroll = useHorizontalScroll(symptomsRef, {
+    disabled: disableBelowFoldRuntime,
     onActiveChange: handleActiveCardChange,
   });
 

@@ -18,6 +18,7 @@ interface HorizontalScrollHandlers {
 }
 
 interface HorizontalScrollOptions {
+  disabled?: boolean;
   itemSelector?: string;
   onActiveChange?: (id: string) => void;
 }
@@ -29,7 +30,7 @@ export function useHorizontalScroll(
   scrollRef: RefObject<HTMLElement | null>,
   options: HorizontalScrollOptions = {},
 ): HorizontalScrollHandlers {
-  const { itemSelector = DEFAULT_ITEM_SELECTOR, onActiveChange } = options;
+  const { disabled = false, itemSelector = DEFAULT_ITEM_SELECTOR, onActiveChange } = options;
 
   const drag = useRef({ active: false, moved: false, startScroll: 0, startX: 0 });
   const activeIdRef = useRef<null | string>(null);
@@ -42,7 +43,7 @@ export function useHorizontalScroll(
 
   useEffect(() => {
     const element = scrollRef.current;
-    if (!element) return;
+    if (!element || disabled) return;
 
     const getClosestItem = () => {
       const items = Array.from(element.querySelectorAll<HTMLElement>(itemSelector));
@@ -134,9 +135,10 @@ export function useHorizontalScroll(
         window.clearTimeout(scrollEndTimerRef.current);
       }
     };
-  }, [itemSelector, scrollRef]);
+  }, [disabled, itemSelector, scrollRef]);
 
   const snapAfterDrag = (element: HTMLElement) => {
+    if (disabled) return;
     window.setTimeout(() => {
       const items = Array.from(element.querySelectorAll<HTMLElement>(itemSelector));
       if (!items.length || element.scrollWidth <= element.clientWidth + 1) return;
@@ -196,6 +198,7 @@ export function useHorizontalScroll(
 
   return {
     onClickCapture: (event) => {
+      if (disabled) return;
       if (!drag.current.moved) return;
 
       event.preventDefault();
@@ -204,6 +207,7 @@ export function useHorizontalScroll(
     },
     onPointerCancel: finishDrag,
     onPointerDown: (event) => {
+      if (disabled) return;
       if (event.pointerType !== 'mouse' || event.button !== 0) return;
 
       drag.current = {
@@ -219,6 +223,7 @@ export function useHorizontalScroll(
       }
     },
     onPointerMove: (event) => {
+      if (disabled) return;
       if (!drag.current.active) return;
 
       if (event.buttons !== 1) {

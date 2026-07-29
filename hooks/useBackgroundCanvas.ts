@@ -31,6 +31,7 @@ import {
   populateFlowPoints,
   updatePulseSample,
 } from '@/hooks/hero-canvas/renderer';
+import { markIosDiagnosticStage } from '@/lib/ios-diagnostics';
 import { getMediaQuery, subscribeToMediaQuery } from '@/lib/media-query';
 
 interface PointerGesture {
@@ -99,6 +100,8 @@ export function useBackgroundCanvas({
       return;
     }
 
+    markIosDiagnosticStage('Canvas criado');
+
     try {
       const interactionRoot = interactionRootSelector
         ? canvas.closest<HTMLElement>(interactionRootSelector)
@@ -134,6 +137,7 @@ export function useBackgroundCanvas({
       let pointerTargetY = 0;
       let pointerOffsetX = 0;
       let pointerOffsetY = 0;
+      let reportedFirstFrame = false;
 
       const pulseSample: CanvasPulseSample = { ...INITIAL_PULSE_SAMPLE };
       const markerPoint: CanvasPoint = { ...INITIAL_POINT };
@@ -270,6 +274,11 @@ export function useBackgroundCanvas({
 
         if (pulse && pulseSample.intensity > 0 && !quality.simplifiedAmbient) {
           drawPulseAura(context, pulse, pulseSample.progress, isMobile);
+        }
+
+        if (!reportedFirstFrame) {
+          reportedFirstFrame = true;
+          markIosDiagnosticStage('Primeiro frame do canvas');
         }
       };
 
