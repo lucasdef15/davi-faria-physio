@@ -3,6 +3,8 @@
 import { gsap } from 'gsap';
 import { useEffect, useRef } from 'react';
 
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
+
 interface ScrollBadgeProps { className?: string; text?: string; }
 
 export default function ScrollBadge({ className = '', text = 'Explore' }: ScrollBadgeProps) {
@@ -10,7 +12,7 @@ export default function ScrollBadge({ className = '', text = 'Explore' }: Scroll
 
   useEffect(() => {
     const container = containerRef.current;
-    if (!container) return;
+    if (!container || getIosDiagnosticOptions().disableAllMotion) return;
     const media = gsap.matchMedia();
     media.add({ reduceMotion: '(prefers-reduced-motion: reduce)', visible: '(min-width: 640px)' }, (context) => {
       const { reduceMotion, visible } = context.conditions as { reduceMotion: boolean; visible: boolean };

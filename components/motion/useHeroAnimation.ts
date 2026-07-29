@@ -5,6 +5,7 @@ import { gsap } from 'gsap';
 import { type RefObject, useRef } from 'react';
 
 import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
+import { getIosDiagnosticOptions, markIosDiagnosticStage } from '@/lib/ios-diagnostics';
 
 gsap.registerPlugin(useGSAP);
 
@@ -22,6 +23,9 @@ export function useHeroAnimation(): UseHeroAnimationResult {
       if (!container) {
         return;
       }
+
+      const diagnostics = getIosDiagnosticOptions();
+      markIosDiagnosticStage('Hero montado');
 
       const ambient = container.querySelector<HTMLElement>('[data-hero-ambient]');
       const canvas = container.querySelector<HTMLCanvasElement>('[data-hero-canvas]');
@@ -49,6 +53,10 @@ export function useHeroAnimation(): UseHeroAnimationResult {
       ].filter((element): element is HTMLElement => element !== null);
 
       const mediaQuery = gsap.matchMedia();
+
+      if (diagnostics.disableHeroMotion) {
+        return;
+      }
 
       mediaQuery.add(
         {
@@ -82,6 +90,7 @@ export function useHeroAnimation(): UseHeroAnimationResult {
 
           const startAnimation = () => {
             try {
+              markIosDiagnosticStage('GSAP iniciado');
               const distance = isMobile ? 14 : 22;
               const lineDuration = isMobile ? 0.78 : 0.94;
 

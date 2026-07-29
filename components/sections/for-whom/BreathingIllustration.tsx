@@ -204,8 +204,8 @@ export default function BreathingIllustration({ className, stageRef }: Breathing
           </g>
 
           {/* Névoa orgânica */}
-          <g
-            style={{
+              <g
+                style={{
               opacity: 'calc(0.5 + var(--glow, 0.5) * 0.5)',
             }}
           >

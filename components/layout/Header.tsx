@@ -9,6 +9,7 @@ import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import { getAnchorScrollTop } from '@/lib/anchor-navigation';
 import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery } from '@/lib/media-query';
 
 import LogoSVG from '../svg/LogoSVG';
@@ -145,7 +146,9 @@ export default function Header() {
         return;
       }
 
-      reduceMotionRef.current = getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false;
+      reduceMotionRef.current =
+        (getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false) ||
+        getIosDiagnosticOptions().disableAllMotion;
 
       gsap.set(header, {
         force3D: true,

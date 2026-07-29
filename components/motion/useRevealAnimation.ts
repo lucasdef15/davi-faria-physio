@@ -5,6 +5,8 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { type RefObject, useRef } from 'react';
 
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
+
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export type RevealVariant = 'default' | 'media' | 'panel';
@@ -29,10 +31,12 @@ export function useRevealAnimation<T extends HTMLElement = HTMLElement>(
 ): UseRevealAnimationResult<T> {
   const containerRef = useRef<T>(null);
   const { disabled = false, duration = 0.9, ease = 'power3.out', markers = false, once = true, selector = '[data-reveal]', start = 'top 84%' } = options;
+  const diagnostics = getIosDiagnosticOptions();
+  const motionDisabled = disabled || diagnostics.disableAllMotion || diagnostics.disableBelowFoldRuntime;
 
   useGSAP(() => {
     const container = containerRef.current;
-    if (!container || disabled) return;
+    if (!container || motionDisabled) return;
     const elements = gsap.utils.toArray<HTMLElement>(selector, container);
     if (!elements.length) return;
 
@@ -83,7 +87,7 @@ export function useRevealAnimation<T extends HTMLElement = HTMLElement>(
       }
     });
     return () => media.revert();
-  }, { dependencies: [disabled, duration, ease, markers, once, selector, start], revertOnUpdate: true, scope: containerRef });
+  }, { dependencies: [duration, ease, markers, motionDisabled, once, selector, start], revertOnUpdate: true, scope: containerRef });
 
   return { containerRef };
 }

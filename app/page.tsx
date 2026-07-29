@@ -1,3 +1,4 @@
+import IosDiagnosticsRuntime from '@/components/diagnostics/IosDiagnosticsRuntime';
 import About from '@/components/sections/about/About';
 import ContactCTA from '@/components/sections/contact/ContactCTA';
 import FAQ from '@/components/sections/faq/FAQ';
@@ -20,6 +21,7 @@ export default function Home() {
       {/* <Testimonials /> */}
       <FAQ />
       <ContactCTA />
+      <IosDiagnosticsRuntime />
     </div>
   );
 }

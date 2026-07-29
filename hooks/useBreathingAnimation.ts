@@ -5,6 +5,7 @@ import type { RefObject } from 'react';
 import { useEffect, useRef } from 'react';
 
 import { BreathingProfile, RGB } from '@/components/sections/for-whom/symptoms';
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery, subscribeToMediaQuery } from '@/lib/media-query';
 
 interface AnimatedState {
@@ -50,9 +51,13 @@ export function useBreathingAnimation(
 
     const mediaQuery = getMediaQuery('(prefers-reduced-motion: reduce)');
     const prefersReducedMotion = mediaQuery?.matches ?? false;
+    const diagnostics = getIosDiagnosticOptions();
 
     if (
       prefersReducedMotion ||
+      diagnostics.disableAllMotion ||
+      diagnostics.disableBelowFoldRuntime ||
+      diagnostics.disableBreathing ||
       typeof IntersectionObserver !== 'function' ||
       typeof requestAnimationFrame !== 'function' ||
       typeof cancelAnimationFrame !== 'function'

@@ -15,6 +15,7 @@ import {
 } from 'react';
 
 import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
+import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
 import { getMediaQuery } from '@/lib/media-query';
 
 gsap.registerPlugin(useGSAP);
@@ -46,7 +47,9 @@ export default function MobileHeader({
 
       const menuItems = Array.from(menu.querySelectorAll<HTMLElement>('[data-mobile-menu-item]'));
       const cta = menu.querySelector<HTMLElement>('[data-mobile-menu-cta]');
-      reduceMotionRef.current = getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false;
+      reduceMotionRef.current =
+        (getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false) ||
+        getIosDiagnosticOptions().disableAllMotion;
 
       gsap.set(menu, {
         autoAlpha: 0,
