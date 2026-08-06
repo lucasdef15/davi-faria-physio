@@ -39,7 +39,7 @@ export function useResultsAnimation(rootRef: RefObject<HTMLDivElement | null>) {
             context.conditions as unknown as ResultsConditions;
 
           if (reduceMotion) {
-            clearSignaturePathStyles(root);
+            resetSignatureAnimationStyles(root);
             return;
           }
 
@@ -203,7 +203,7 @@ export function useResultsAnimation(rootRef: RefObject<HTMLDivElement | null>) {
             cancelAnimationFrame(initialFrame);
             rootObserver?.disconnect();
             cardObservers.forEach((observer) => observer.disconnect());
-            clearSignaturePathStyles(root);
+            resetSignatureAnimationStyles(root);
           };
         },
       );
@@ -297,6 +297,14 @@ function addSignatureReveal(
     timeline.from(elements.grids, { autoAlpha: 0, duration: 0.5 }, position + 0.05);
   }
 
+  if (elements.halos.length > 0) {
+    timeline.from(
+      elements.halos,
+      { autoAlpha: 0, duration: 0.52, stagger: 0.04 },
+      position + 0.07,
+    );
+  }
+
   if (elements.paths.length > 0) {
     gsap.set(elements.paths, { strokeDasharray: 1, strokeDashoffset: 1 });
     timeline.to(
@@ -308,6 +316,45 @@ function addSignatureReveal(
         strokeDashoffset: 0,
       },
       position + 0.09,
+    );
+  }
+
+  if (elements.pulses.length > 0) {
+    gsap.set(elements.pulses, {
+      autoAlpha: 0,
+      strokeDasharray: '0.09 1.06',
+      strokeDashoffset: 1.15,
+    });
+
+    timeline.to(
+      elements.pulses,
+      {
+        autoAlpha: 0.9,
+        duration: 0.08,
+        stagger: 0.12,
+      },
+      position + 0.47,
+    );
+    timeline.to(
+      elements.pulses,
+      {
+        duration: 1.12,
+        ease: 'none',
+        repeat: 1,
+        repeatDelay: 0.12,
+        stagger: 0.12,
+        strokeDashoffset: -1.15,
+      },
+      position + 0.47,
+    );
+    timeline.to(
+      elements.pulses,
+      {
+        autoAlpha: 0,
+        duration: 0.2,
+        stagger: 0.12,
+      },
+      position + 2.83,
     );
   }
 
@@ -344,6 +391,7 @@ function addSignatureReveal(
   }
 
   timeline.call(() => clearSignaturePathStyles(scope), [], position + 1.06);
+  timeline.call(() => clearSignaturePulseStyles(scope), [], position + 3.18);
 }
 
 function clearSignaturePathStyles(scope: ParentNode) {
@@ -354,13 +402,30 @@ function clearSignaturePathStyles(scope: ParentNode) {
   }
 }
 
+function clearSignaturePulseStyles(scope: ParentNode) {
+  const pulses = gsap.utils.toArray<SVGPathElement>('[data-signature-pulse]', scope);
+
+  if (pulses.length > 0) {
+    gsap.set(pulses, {
+      clearProps: 'strokeDasharray,strokeDashoffset,opacity,visibility',
+    });
+  }
+}
+
+function resetSignatureAnimationStyles(scope: ParentNode) {
+  clearSignaturePathStyles(scope);
+  clearSignaturePulseStyles(scope);
+}
+
 function getSignatureElements(scope: ParentNode) {
   return {
     fills: gsap.utils.toArray<SVGElement>('[data-signature-fill]', scope),
     frames: gsap.utils.toArray<HTMLElement>('[data-result-signature]', scope),
     grids: gsap.utils.toArray<SVGElement>('[data-signature-grid]', scope),
+    halos: gsap.utils.toArray<SVGPathElement>('[data-signature-halo]', scope),
     labels: gsap.utils.toArray<SVGElement>('[data-signature-label]', scope),
     nodes: gsap.utils.toArray<SVGElement>('[data-signature-node]', scope),
     paths: gsap.utils.toArray<SVGPathElement>('[data-signature-path]', scope),
+    pulses: gsap.utils.toArray<SVGPathElement>('[data-signature-pulse]', scope),
   };
 }
