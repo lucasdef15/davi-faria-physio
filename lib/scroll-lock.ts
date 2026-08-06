@@ -17,13 +17,11 @@ interface ScrollLockState {
 }
 
 let activeLocks = 0;
-let savedState: null | ScrollLockState = null;
+let savedState: ScrollLockState | null = null;
 
 export function lockDocumentScroll(): () => void {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
-    return () => {
-      'nothing to do';
-    };
+    return () => undefined;
   }
 
   activeLocks += 1;
@@ -46,7 +44,6 @@ export function lockDocumentScroll(): () => void {
     if (activeLocks === 0 && savedState) {
       const state = savedState;
       savedState = null;
-
       restoreLock(state);
     }
   };
@@ -54,8 +51,9 @@ export function lockDocumentScroll(): () => void {
 
 function applyLock(scrollTop: number): void {
   const { body, documentElement } = document;
-  const compensation = getScrollBarCompensation();
-  const currentPaddingRight = Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
+  const compensation = Math.max(0, window.innerWidth - documentElement.clientWidth);
+  const currentPaddingRight =
+    Number.parseFloat(window.getComputedStyle(body).paddingRight) || 0;
 
   documentElement.style.overflow = 'hidden';
   documentElement.style.overscrollBehavior = 'none';
@@ -73,10 +71,6 @@ function applyLock(scrollTop: number): void {
 
   documentElement.setAttribute(LOCK_ATTRIBUTE, 'true');
   body.dataset.scrollLock = 'true';
-}
-
-function getScrollBarCompensation(): number {
-  return Math.max(0, window.innerWidth - document.documentElement.clientWidth);
 }
 
 function restoreLock(state: ScrollLockState): void {
@@ -97,8 +91,7 @@ function restoreLock(state: ScrollLockState): void {
   documentElement.removeAttribute(LOCK_ATTRIBUTE);
   delete body.dataset.scrollLock;
 
-  window.scrollTo(0, state.scrollTop);
-
+  window.scrollTo({ behavior: 'auto', left: 0, top: state.scrollTop });
   documentElement.style.scrollBehavior = state.htmlScrollBehavior;
 }
 
