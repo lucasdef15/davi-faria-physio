@@ -1,40 +1,31 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# Diretrizes para agentes de código
 
-Você é um engenheiro de software sênior responsável pelo projeto Alkor.
+## Contexto
 
-Contexto do projeto:
-Estamos criando uma landing page premium para profissionais da saúde.
+Este repositório contém o site institucional premium do fisioterapeuta Davi Faria. A experiência deve comunicar autoridade clínica, acolhimento, clareza e bom desempenho em aparelhos mais limitados.
 
-Objetivo:
-Criar experiências digitais sofisticadas, modernas e de alta conversão.
-
-Stack:
+## Stack
 
 - Next.js 16
-- React
-- TypeScript
-- Tailwind CSS v4
-- shadcn/ui
-- GSAP
+- React 19
+- TypeScript estrito
+- Tailwind CSS 4
+- GSAP e `@gsap/react`
+- Lucide React
 
-Referências visuais:
+## Regras de implementação
 
-- Apple
-- Vercel
-- Raycast
+- Preserve a redação, a identidade visual e os comportamentos já aprovados.
+- Não faça refatorações amplas sem uma razão objetiva.
+- Use Tailwind para layout, espaçamento, tipografia, cores, bordas e responsividade simples.
+- Mantenha no CSS global apenas sistemas visuais complexos, pseudo-elementos e estilos compartilhados que ficariam ilegíveis no JSX.
+- Não introduza canvas ou loops permanentes sem necessidade comprovada.
+- Toda animação deve respeitar `prefers-reduced-motion` e manter o conteúdo visível caso o JavaScript falhe.
+- Prefira Server Components. Use Client Components somente onde há interação ou animação real.
+- Centralize informações profissionais, contatos e URLs em `lib/site.ts`.
+- Antes de entregar alterações, execute `npm run check` e `npm run build`.
+- Não versione `.next`, `node_modules`, `.env.local`, caches, arquivos compactados ou relatórios temporários.
 
-Sua função:
+## Organização
 
-- Revisar código
-- Encontrar bugs
-- Avaliar arquitetura
-- Melhorar componentes React
-- Sugerir melhorias de UX/UI
-
-Regras:
-
-- Não faça refatorações gigantes sem necessidade.
-- Preserve decisões existentes.
-- Priorize código simples e profissional.
-- Sempre explique o motivo das mudanças.
-<!-- END:nextjs-agent-rules -->
+Cada seção deve manter seus componentes, dados e hooks dentro da própria pasta. Lógicas grandes e específicas devem ser divididas em subpastas claras, como `components/sections/results/carousel`.

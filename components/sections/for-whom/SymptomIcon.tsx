@@ -1,6 +1,8 @@
-import { SymptomIconName } from './symptoms';
+import type { ReactNode } from 'react';
 
-const PATHS: Record<SymptomIconName, React.ReactNode> = {
+import type { SymptomIconName } from './symptoms';
+
+const PATHS: Record<SymptomIconName, ReactNode> = {
   breath: (
     <>
       <path d="M3 8h9a2.5 2.5 0 1 0-2.5-2.5" />
@@ -12,7 +14,7 @@ const PATHS: Record<SymptomIconName, React.ReactNode> = {
     <>
       <path d="M4 15a4 4 0 0 1 4-4h1a3 3 0 0 0 3-3V7" />
       <path d="M8 11v6" />
-      <path d="M16 7.5l2.5-1M16 11l2.8 0M16 14.5l2.5 1" />
+      <path d="M16 7.5l2.5-1M16 11h2.8M16 14.5l2.5 1" />
     </>
   ),
   limit: (
@@ -22,16 +24,8 @@ const PATHS: Record<SymptomIconName, React.ReactNode> = {
       <path d="M7.5 16.5l-2 2" />
     </>
   ),
-  recovery: (
-    <>
-      <path d="M3 12h4l2-5 3 10 2-5h5" />
-    </>
-  ),
-  stairs: (
-    <>
-      <path d="M4 19h4v-4h4v-4h4V7h4" />
-    </>
-  ),
+  recovery: <path d="M3 12h4l2-5 3 10 2-5h5" />,
+  stairs: <path d="M4 19h4v-4h4v-4h4V7h4" />,
 };
 
 interface SymptomIconProps {
@@ -45,12 +39,14 @@ export default function SymptomIcon({ className, name }: SymptomIconProps) {
       aria-hidden="true"
       className={className}
       fill="none"
+      focusable="false"
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeWidth={1.6}
+      strokeWidth={1.55}
       viewBox="0 0 24 24"
     >
+      <path d="M4.25 4.25h2.5M4.25 4.25v2.5M19.75 17.25v2.5h-2.5" opacity="0.34" strokeWidth="1" />
       {PATHS[name]}
     </svg>
   );

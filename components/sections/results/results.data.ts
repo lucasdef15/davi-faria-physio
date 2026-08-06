@@ -1,4 +1,4 @@
-interface EvolutionArea {
+export interface EvolutionArea {
   description: string;
   id: number;
   indicators: readonly string[];
