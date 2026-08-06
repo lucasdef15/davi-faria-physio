@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { useRef } from 'react';
 
 import { useHeroAnimation } from './useHeroAnimation';

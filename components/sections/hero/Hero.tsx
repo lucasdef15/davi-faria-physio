@@ -5,7 +5,11 @@ import Physiotherapist from '@/public/physiotherapist.png';
 
 import HeroMotionShell from './HeroMotionShell';
 
-const INDICATORS = ['Atendimento domiciliar', 'Recuperação pós-hospitalar', 'Mococa e região'] as const;
+const INDICATORS = [
+  'Atendimento domiciliar',
+  'Recuperação pós-hospitalar',
+  'Mococa e região',
+] as const;
 const CONTINUITY_STAGES = ['Alta', 'Casa', 'Rotina'] as const;
 
 export default function Hero() {
@@ -59,8 +63,8 @@ export default function Hero() {
               className="mx-auto mt-5 max-w-[40rem] text-[0.98rem] leading-7 text-slate-600 sm:mt-6 sm:text-[1.05rem] sm:leading-8 lg:mx-0 lg:max-w-[38rem]"
               data-hero-summary
             >
-              Atendimento domiciliar para continuar a recuperação após internações, ventilação mecânica ou AVC,
-              além do acompanhamento de condições respiratórias como DPOC e asma.
+              Atendimento domiciliar para continuar a recuperação após internações, ventilação
+              mecânica ou AVC, além do acompanhamento de condições respiratórias como DPOC e asma.
             </p>
 
             <div
@@ -69,7 +73,10 @@ export default function Hero() {
             >
               <Link className="button-primary group w-full sm:w-auto" href="#contato">
                 Conversar com o fisioterapeuta
-                <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+                <span
+                  aria-hidden="true"
+                  className="transition-transform group-hover:translate-x-0.5"
+                >
                   →
                 </span>
               </Link>
@@ -116,13 +123,13 @@ export default function Hero() {
             >
               <div className="overflow-hidden rounded-[1.6rem] border border-slate-900/6 bg-white sm:rounded-[2.05rem]">
                 <div className="relative h-[clamp(26rem,56svh,35rem)] overflow-hidden bg-slate-100 sm:h-[clamp(29rem,58svh,37rem)] lg:h-[clamp(25rem,52svh,34rem)]">
-                  <div className="absolute inset-0" data-hero-photo-image>
+                  <div className="relative h-[28rem] w-full overflow-hidden">
                     <Image
                       alt="Fisioterapeuta Davi Faria, profissional com atuação hospitalar, cardiorrespiratória e domiciliar."
-                      className="object-cover object-center"
+                      className="object-cover object-[center_20%]"
                       fill
                       priority
-                      sizes="(max-width: 640px) 92vw, (max-width: 1024px) 31rem, 31rem"
+                      sizes="(max-width: 640px) 92vw, (max-width: 960px) 31rem, 31rem"
                       src={Physiotherapist}
                     />
                   </div>
@@ -151,8 +158,8 @@ export default function Hero() {
                       Dr. Davi Faria
                     </h2>
                     <p className="mt-1 max-w-[25rem] text-[0.78rem] leading-5.5 text-slate-600 sm:text-[0.84rem] sm:leading-6">
-                      Fisioterapia cardiorrespiratória e funcional para dar continuidade ao cuidado com segurança,
-                      proximidade e direção.
+                      Fisioterapia cardiorrespiratória e funcional para dar continuidade ao cuidado
+                      com segurança, proximidade e direção.
                     </p>
                   </div>
 
