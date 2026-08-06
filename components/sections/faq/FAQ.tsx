@@ -1,26 +1,17 @@
-'use client';
-
 import { ArrowRight, Plus } from 'lucide-react';
-
-import { useRevealAnimation } from '@/components/motion/useRevealAnimation';
 
 import { FAQ_ITEMS } from './faq.data';
 
 export default function FAQ() {
-  const { containerRef } = useRevealAnimation<HTMLElement>({
-    start: 'top 84%',
-  });
-
   return (
     <section
       aria-labelledby="faq-title"
       className="relative overflow-hidden bg-white"
       id="faq"
-      ref={containerRef}
     >
       <div className="site-container section-space">
         <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)] lg:gap-20 xl:gap-28">
-          <div className="lg:sticky lg:top-32" data-reveal="default">
+          <div className="lg:sticky lg:top-32">
             <span className="section-eyebrow">Dúvidas frequentes</span>
 
             <h2 className="section-title mt-6 max-w-[13ch]" id="faq-title">
@@ -53,7 +44,7 @@ export default function FAQ() {
               const number = String(index + 1).padStart(2, '0');
 
               return (
-                <details className="group" data-reveal="default" key={item.question} name="faq">
+                <details className="group" key={item.question} name="faq">
                   <summary
                     className={[
                       'flex cursor-pointer list-none items-center justify-between',

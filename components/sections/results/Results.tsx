@@ -1,172 +1,96 @@
-'use client';
-
 import Link from 'next/link';
 
-import { useRevealAnimation } from '@/components/motion/useRevealAnimation';
-
-import EvolutionAreaItem from './EvolutionAreaItem';
-import { EVOLUTION_AREAS, EVOLUTION_DIMENSIONS } from './results.data';
+import ResultsJourney from './ResultsJourney';
+import ResultsMotionShell from './ResultsMotionShell';
 
 export default function Results() {
-  const { containerRef } = useRevealAnimation<HTMLElement>({
-    start: 'top 82%',
-  });
-
   return (
     <section
       aria-labelledby="results-title"
-      className="relative overflow-hidden bg-white"
+      className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f4fbfb_48%,#ffffff_100%)]"
       id="results"
-      ref={containerRef}
     >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute top-1/2 left-1/2 h-[42rem] w-[72rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(20,184,166,0.08),transparent_68%)] blur-3xl"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-slate-200 to-transparent"
       />
 
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-slate-200/80 to-transparent"
+        className="pointer-events-none absolute top-16 left-1/2 h-[28rem] w-[46rem] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(45,212,191,0.11),transparent_68%)] blur-3xl"
       />
 
       <div className="site-container section-space relative">
-        <div
-          className={[
-            'relative mx-auto max-w-6xl overflow-hidden',
-            'rounded-[1.75rem] border border-slate-900/10',
-            'bg-[#07131f]',
-            'shadow-[0_45px_110px_-52px_rgba(2,15,27,0.78)]',
-            'sm:rounded-[2.25rem]',
-            'lg:rounded-[2.75rem]',
-          ].join(' ')}
-          data-reveal="media"
-        >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.024)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.024)_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,black,transparent_92%)] bg-size-[46px_46px]"
-          />
+        <ResultsMotionShell>
+          <header className="mx-auto grid max-w-6xl gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end lg:gap-16">
+            <div>
+              <span className="section-eyebrow" data-results-eyebrow>
+                Evolução funcional
+              </span>
 
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-44 -left-36 size-[30rem] rounded-full bg-teal-400/12 blur-[130px]"
-          />
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-48 -bottom-44 size-[34rem] rounded-full bg-sky-400/8 blur-[150px]"
-          />
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-teal-300/30 to-transparent"
-          />
-
-          <div className="relative grid lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
-            <header className="relative flex flex-col px-6 py-10 sm:px-10 sm:py-12 lg:min-h-[42rem] lg:px-12 lg:py-14 xl:px-14 xl:py-16">
-              <div>
-                <div data-reveal>
-                  <span className="inline-flex items-center gap-3 text-[0.62rem] font-semibold tracking-[0.2em] text-teal-300 uppercase">
-                    <span className="h-px w-7 bg-teal-300/50" />
-                    Evolução funcional
-                  </span>
-                </div>
-
-                <h2
-                  className="font-space-grotesk mt-6 max-w-xl text-[clamp(2rem,4.5vw,3.45rem)] leading-[1.03] font-semibold tracking-[-0.045em] text-balance text-white"
-                  data-reveal
-                  id="results-title"
-                >
+              <h2
+                className="font-space-grotesk mt-6 max-w-[16ch] overflow-hidden text-[clamp(2.45rem,7.5vw,4.5rem)] leading-[0.98] font-semibold tracking-[-0.055em] text-slate-950 text-balance"
+                id="results-title"
+              >
+                <span className="block" data-results-title-line>
                   Quando o corpo volta a responder,
-                  <span className="block bg-linear-to-r from-teal-600 via-cyan-500 to-sky-500 bg-clip-text text-transparent">
-                    a rotina começa a mudar.
-                  </span>
-                </h2>
-
-                <p
-                  className="mt-6 max-w-md text-sm leading-7 text-slate-300 sm:text-base sm:leading-8"
-                  data-reveal
-                >
-                  A evolução é observada em capacidades que podem ser afetadas após internações,
-                  ventilação mecânica, AVC ou por condições respiratórias.
-                </p>
-              </div>
-
-              <div className="mt-10 border-t border-white/8 pt-6 lg:mt-auto" data-reveal>
-                <span className="block text-[0.58rem] font-semibold tracking-[0.17em] text-teal-300/80 uppercase">
-                  Quatro dimensões acompanhadas
                 </span>
+                <span
+                  className="block bg-linear-to-r from-teal-700 via-cyan-600 to-sky-600 bg-clip-text text-transparent"
+                  data-results-title-line
+                >
+                  a rotina começa a mudar.
+                </span>
+              </h2>
+            </div>
 
-                <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3">
-                  {EVOLUTION_DIMENSIONS.map((dimension, index) => (
-                    <span
-                      className="group/dimension inline-flex items-center gap-2 text-xs text-slate-400"
-                      key={dimension + index}
-                    >
-                      <span className="font-mono text-[0.55rem] font-semibold tracking-[0.14em] text-white/20 transition-colors duration-300 group-hover/dimension:text-teal-300/70">
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
+            <div
+              className="border-l border-slate-200 pl-5 sm:pl-6"
+              data-results-summary
+            >
+              <span className="font-mono text-[0.64rem] font-semibold tracking-[0.18em] text-teal-700 uppercase">
+                04 dimensões acompanhadas
+              </span>
 
-                      <span className="transition-colors duration-300 group-hover/dimension:text-slate-300">
-                        {dimension}
-                      </span>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </header>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                A evolução é observada em capacidades que podem ser afetadas após internações,
+                ventilação mecânica, AVC ou por condições respiratórias.
+              </p>
+            </div>
+          </header>
 
-            <ol className="relative grid border-t border-white/8 lg:grid-rows-4 lg:border-t-0 lg:border-l">
-              {EVOLUTION_AREAS.map((area, index) => (
-                <EvolutionAreaItem
-                  area={area}
-                  key={area.id}
-                  number={String(index + 1).padStart(2, '0')}
-                />
-              ))}
-            </ol>
-          </div>
+          <ResultsJourney />
 
           <footer
-            className="relative grid gap-5 border-t border-white/8 px-6 py-6 sm:px-10 sm:py-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-12 xl:px-14"
-            data-reveal
+            className="relative mx-auto mt-10 grid max-w-6xl gap-5 overflow-hidden rounded-[1.5rem] border border-slate-200/80 bg-white/85 p-5 shadow-[0_24px_70px_-48px_rgba(15,118,110,0.4)] sm:p-6 xl:mt-0 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center xl:rounded-t-none xl:rounded-b-[2.25rem] xl:border-t-0 xl:bg-white/92 xl:px-7 xl:py-6"
+            data-results-footer
           >
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/[0.035] to-transparent"
+              className="pointer-events-none absolute inset-x-7 top-0 hidden h-px bg-linear-to-r from-teal-400/45 via-cyan-400/18 to-transparent xl:block"
             />
 
-            <p className="max-w-3xl text-xs leading-5 text-slate-400">
-              Os objetivos e a progressão são definidos após a avaliação e variam conforme o quadro
-              clínico, as necessidades e a resposta individual de cada paciente.
-            </p>
+            <div data-results-disclaimer>
+              <span className="mb-2 hidden font-mono text-[0.58rem] font-semibold tracking-[0.16em] text-teal-700 uppercase xl:block">
+                Acompanhamento individual
+              </span>
+
+              <p className="max-w-3xl text-xs leading-6 text-slate-500 sm:text-sm">
+                Os objetivos e a progressão são definidos após a avaliação e variam conforme o
+                quadro clínico, as necessidades e a resposta individual de cada paciente.
+              </p>
+            </div>
 
             <Link
-              className={[
-                'group inline-flex w-fit items-center justify-center gap-2',
-                'rounded-full border border-white/12 bg-white/[0.04]',
-                'px-4 py-2.5 text-xs font-semibold text-white',
-                'transition-all duration-300',
-                'hover:border-teal-300/30',
-                'hover:bg-teal-300/[0.07]',
-                'hover:text-teal-200',
-                'active:border-teal-300/30',
-                'active:bg-teal-300/[0.07]',
-                'active:text-teal-200',
-                'focus-visible:outline-2',
-                'focus-visible:outline-offset-4',
-                'focus-visible:outline-teal-300',
-              ].join(' ')}
+              className="group inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_-18px_rgba(15,23,42,0.72)] transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-teal-800 hover:shadow-[0_20px_38px_-18px_rgba(15,118,110,0.6)] focus-visible:outline-teal-600 sm:w-fit"
+              data-results-cta
               href="#contato"
             >
               <span>Conversar sobre sua recuperação</span>
 
               <svg
                 aria-hidden="true"
-                className={[
-                  'size-4 transition-transform duration-300 ease-out',
-                  'group-hover:translate-x-1',
-                  'group-active:translate-x-1',
-                ].join(' ')}
+                className="size-4 transition-transform duration-300 group-hover:translate-x-1"
                 fill="none"
                 stroke="currentColor"
                 strokeLinecap="round"
@@ -179,7 +103,7 @@ export default function Results() {
               </svg>
             </Link>
           </footer>
-        </div>
+        </ResultsMotionShell>
       </div>
     </section>
   );

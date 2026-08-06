@@ -1,511 +1,81 @@
-'use client';
-
-import { useGSAP } from '@gsap/react';
-import { gsap } from 'gsap';
-import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
-import { type MouseEvent, useCallback, useEffect, useRef, useState } from 'react';
 
-import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import { getAnchorScrollTop } from '@/lib/anchor-navigation';
-import { cancelScheduledFrame, scheduleFrame } from '@/lib/animation-frame';
-import { getIosDiagnosticOptions } from '@/lib/ios-diagnostics';
-import { getMediaQuery } from '@/lib/media-query';
-import { getPerformanceTier } from '@/lib/performance-tier';
+import { SITE_CONFIG } from '@/lib/site';
 
 import LogoSVG from '../svg/LogoSVG';
-import MobileHeader from './MobileHeader';
 import { NAV_LINKS } from './navLinks';
 
-gsap.registerPlugin(useGSAP);
-
-type HeaderMode = 'hidden' | 'top' | 'visible';
-type QuickSetter = ReturnType<typeof gsap.quickSetter>;
-
-type SurfaceMode = 'compact' | 'top';
-
-const COMPACT_DISTANCE = 180;
-const COMPACT_THRESHOLD = 24;
-const TOP_THRESHOLD = 48;
-const HIDE_THRESHOLD = 320;
-
-const HEADER_TOP_Y = 16;
-const HEADER_VISIBLE_Y = 8;
-const HEADER_HIDDEN_Y = -112;
-
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  const headerRef = useRef<HTMLElement>(null);
-  const shellRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
-
-  const menuIconRef = useRef<SVGSVGElement>(null);
-  const closeIconRef = useRef<SVGSVGElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
-
-  const menuTimelineRef = useRef<gsap.core.Timeline | null>(null);
-
-  const headerModeRef = useRef<HeaderMode>('top');
-  const surfaceModeRef = useRef<SurfaceMode>('top');
-
-  const isNavigatingRef = useRef(false);
-  const navigationTimerRef = useRef<null | number>(null);
-  const reduceMotionRef = useRef(false);
-
-  const shellScaleSetterRef = useRef<null | QuickSetter>(null);
-  const contentPaddingTopSetterRef = useRef<null | QuickSetter>(null);
-  const contentPaddingBottomSetterRef = useRef<null | QuickSetter>(null);
-  const logoScaleSetterRef = useRef<null | QuickSetter>(null);
-
-  const setHeaderMode = useCallback((nextMode: HeaderMode) => {
-    const header = headerRef.current;
-
-    if (!header || headerModeRef.current === nextMode) {
-      return;
-    }
-
-    headerModeRef.current = nextMode;
-
-    const y =
-      nextMode === 'hidden'
-        ? HEADER_HIDDEN_Y
-        : nextMode === 'top'
-          ? HEADER_TOP_Y
-          : HEADER_VISIBLE_Y;
-
-    if (reduceMotionRef.current) {
-      gsap.set(header, { y });
-      return;
-    }
-
-    gsap.to(header, {
-      duration: nextMode === 'hidden' ? 0.38 : 0.58,
-      ease: nextMode === 'hidden' ? 'power3.inOut' : 'expo.out',
-      overwrite: 'auto',
-      y,
-    });
-  }, []);
-
-  const setSurfaceMode = useCallback((nextMode: SurfaceMode) => {
-    const shell = shellRef.current;
-
-    if (!shell || surfaceModeRef.current === nextMode) {
-      return;
-    }
-
-    surfaceModeRef.current = nextMode;
-
-    const isCompact = nextMode === 'compact';
-
-    const properties = {
-      backgroundColor: isCompact ? 'rgba(255, 255, 255, 0.88)' : 'rgba(255, 255, 255, 0.52)',
-
-      borderColor: isCompact ? 'rgba(15, 23, 42, 0.075)' : 'rgba(255, 255, 255, 0.46)',
-
-      boxShadow: isCompact
-        ? '0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 42px -20px rgba(15, 23, 42, 0.2)'
-        : '0 1px 2px rgba(15, 23, 42, 0.025), 0 12px 36px -24px rgba(15, 23, 42, 0.14)',
-    };
-
-    if (reduceMotionRef.current) {
-      gsap.set(shell, properties);
-      return;
-    }
-
-    gsap.to(shell, {
-      ...properties,
-      duration: 0.46,
-      ease: 'power3.out',
-      overwrite: 'auto',
-    });
-  }, []);
-
-  const applyCompactProgress = useCallback((scroll: number) => {
-    const progress = gsap.utils.clamp(0, 1, scroll / COMPACT_DISTANCE);
-
-    shellScaleSetterRef.current?.(1 - progress * 0.03);
-
-    contentPaddingTopSetterRef.current?.(12 - progress * 5);
-
-    contentPaddingBottomSetterRef.current?.(12 - progress * 5);
-
-    logoScaleSetterRef.current?.(1 - progress * 0.08);
-  }, []);
-
-  useGSAP(
-    () => {
-      const header = headerRef.current;
-      const shell = shellRef.current;
-      const content = contentRef.current;
-      const logo = logoRef.current;
-      const menuIcon = menuIconRef.current;
-      const closeIcon = closeIconRef.current;
-
-      if (!header || !shell || !content || !logo || !menuIcon || !closeIcon) {
-        return;
-      }
-
-      reduceMotionRef.current =
-        (getMediaQuery('(prefers-reduced-motion: reduce)').matches ?? false) ||
-        getIosDiagnosticOptions().disableAllMotion;
-      header.dataset.performanceTier = getPerformanceTier(navigator, window.devicePixelRatio || 1);
-
-      gsap.set(header, {
-        force3D: true,
-        y: HEADER_TOP_Y,
-      });
-
-      gsap.set(shell, {
-        backgroundColor: 'rgba(255, 255, 255, 0.52)',
-        borderColor: 'rgba(255, 255, 255, 0.46)',
-        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.025), 0 12px 36px -24px rgba(15, 23, 42, 0.14)',
-        force3D: true,
-        scaleX: 1,
-        transformOrigin: 'center center',
-      });
-
-      gsap.set(content, {
-        paddingBottom: 12,
-        paddingTop: 12,
-      });
-
-      gsap.set(logo, {
-        force3D: true,
-        scale: 1,
-        transformOrigin: 'left center',
-      });
-
-      shellScaleSetterRef.current = gsap.quickSetter(shell, 'scaleX');
-
-      contentPaddingTopSetterRef.current = gsap.quickSetter(content, 'paddingTop', 'px');
-
-      contentPaddingBottomSetterRef.current = gsap.quickSetter(content, 'paddingBottom', 'px');
-
-      logoScaleSetterRef.current = gsap.quickSetter(logo, 'scale');
-
-      gsap.set(menuIcon, {
-        autoAlpha: 1,
-        rotation: 0,
-        scale: 1,
-        transformOrigin: 'center center',
-      });
-
-      gsap.set(closeIcon, {
-        autoAlpha: 0,
-        rotation: -35,
-        scale: 0.86,
-        transformOrigin: 'center center',
-      });
-
-      const menuTimeline = gsap.timeline({
-        defaults: {
-          duration: reduceMotionRef.current ? 0 : 0.3,
-          ease: 'power3.out',
-          overwrite: 'auto',
-        },
-        paused: true,
-      });
-
-      menuTimeline
-        .to(
-          menuIcon,
-          {
-            autoAlpha: 0,
-            rotation: 35,
-            scale: 0.86,
-          },
-          0,
-        )
-        .to(
-          closeIcon,
-          {
-            autoAlpha: 1,
-            rotation: 0,
-            scale: 1,
-          },
-          0.05,
-        );
-
-      menuTimelineRef.current = menuTimeline;
-
-      return () => {
-        menuTimeline.kill();
-
-        gsap.killTweensOf([header, shell, content, logo, menuIcon, closeIcon]);
-
-        menuTimelineRef.current = null;
-
-        shellScaleSetterRef.current = null;
-        contentPaddingTopSetterRef.current = null;
-        contentPaddingBottomSetterRef.current = null;
-        logoScaleSetterRef.current = null;
-        delete header.dataset.performanceTier;
-      };
-    },
-    {
-      scope: headerRef,
-    },
-  );
-
-  useBodyScrollLock(isMenuOpen);
-
-  useEffect(() => {
-    return () => {
-      if (navigationTimerRef.current !== null) {
-        window.clearTimeout(navigationTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    let frameId = 0;
-    let previousScroll = Math.max(0, window.scrollY);
-
-    const syncHeader = () => {
-      frameId = 0;
-
-      const scroll = Math.max(0, window.scrollY);
-      const delta = scroll - previousScroll;
-
-      applyCompactProgress(scroll);
-      setSurfaceMode(scroll > COMPACT_THRESHOLD ? 'compact' : 'top');
-
-      if (scroll <= TOP_THRESHOLD) {
-        setHeaderMode('top');
-      } else if (reduceMotionRef.current || isMenuOpen || isNavigatingRef.current) {
-        setHeaderMode('visible');
-      } else if (delta > 2 && scroll > HIDE_THRESHOLD) {
-        setHeaderMode('hidden');
-      } else if (delta < -2 || headerModeRef.current === 'top') {
-        setHeaderMode('visible');
-      }
-
-      previousScroll = scroll;
-    };
-
-    const handleScroll = () => {
-      if (frameId === 0) {
-        frameId = scheduleFrame(syncHeader);
-      }
-    };
-
-    syncHeader();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      cancelScheduledFrame(frameId);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [applyCompactProgress, isMenuOpen, setHeaderMode, setSurfaceMode]);
-
-  const navigateToSection = useCallback(
-    (href: string) => {
-      setIsMenuOpen(false);
-
-      if (!href.startsWith('#')) {
-        return;
-      }
-
-      const target = document.querySelector<HTMLElement>(href);
-
-      if (!target) {
-        return;
-      }
-
-      isNavigatingRef.current = true;
-
-      if (navigationTimerRef.current !== null) {
-        window.clearTimeout(navigationTimerRef.current);
-      }
-
-      const isHome = href === '#inicio';
-
-      setHeaderMode(isHome ? 'top' : 'visible');
-
-      if (window.location.hash !== href) {
-        window.history.pushState(null, '', href);
-      }
-
-      const top = getAnchorScrollTop(
-        target.getBoundingClientRect().top,
-        window.scrollY,
-        isHome ? 0 : 100,
-      );
-
-      try {
-        window.scrollTo({
-          behavior: reduceMotionRef.current ? 'auto' : 'smooth',
-          top,
-        });
-      } catch {
-        target.scrollIntoView({ block: 'start' });
-      }
-
-      navigationTimerRef.current = window.setTimeout(
-        () => {
-          isNavigatingRef.current = false;
-          navigationTimerRef.current = null;
-          setHeaderMode(window.scrollY <= TOP_THRESHOLD ? 'top' : 'visible');
-        },
-        reduceMotionRef.current ? 0 : 550,
-      );
-    },
-    [setHeaderMode],
-  );
-
-  const handleDesktopNavigation = useCallback(
-    (event: MouseEvent<HTMLAnchorElement>, href: string) => {
-      if (!href.startsWith('#')) {
-        setIsMenuOpen(false);
-        return;
-      }
-
-      event.preventDefault();
-      navigateToSection(href);
-    },
-    [navigateToSection],
-  );
-
-  useEffect(() => {
-    const timeline = menuTimelineRef.current;
-
-    if (!timeline) {
-      return;
-    }
-
-    if (reduceMotionRef.current) {
-      timeline.progress(isMenuOpen ? 1 : 0).pause();
-
-      return;
-    }
-
-    if (isMenuOpen) {
-      timeline.play();
-    } else {
-      timeline.reverse();
-    }
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMenuOpen(false);
-      }
-    };
-
-    if (isMenuOpen) {
-      setHeaderMode('visible');
-
-      window.addEventListener('keydown', handleKeyDown);
-    } else {
-      const currentScroll = window.scrollY;
-
-      setHeaderMode(currentScroll <= TOP_THRESHOLD ? 'top' : 'visible');
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMenuOpen, setHeaderMode]);
-
   return (
-    <header
-      className="fixed inset-x-0 top-0 z-50 mx-auto w-[calc(100%-1rem)] max-w-[92%] will-change-transform sm:w-[calc(100%-2rem)]"
-      ref={headerRef}
-    >
-      <div className="relative">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-[1.4rem] border border-white/45 bg-white/50 shadow-[0_1px_2px_rgba(15,23,42,0.025),0_12px_36px_-24px_rgba(15,23,42,0.14)] backdrop-blur-2xl backdrop-saturate-150 will-change-transform"
-          data-header-surface
-          ref={shellRef}
-        />
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-[1.35rem] border border-slate-900/8 bg-white/95 px-4 py-2.5 shadow-[0_16px_45px_-28px_rgba(15,23,42,0.32)] sm:px-5">
+        <Link aria-label="Davi Faria Physio — Início" className="relative z-10 shrink-0" href="#inicio">
+          <LogoSVG className="h-9 w-auto text-slate-950 sm:h-10" name="DAVI FARIA" surname="PHYSIO" />
+        </Link>
 
-        <div
-          className="relative flex items-center justify-between px-5 sm:px-10 lg:px-15"
-          ref={contentRef}
-        >
-          <Link
-            aria-label="Ir para o início"
-            className="flex shrink-0 items-center outline-none focus-visible:rounded-lg focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-4"
-            href="#inicio"
-            onClick={(event) => handleDesktopNavigation(event, '#inicio')}
-          >
-            <div className="will-change-transform" ref={logoRef}>
-              <LogoSVG className="w-29.78 h-12" fill="#0f172a" name="DAVI FARIA" surname="PHYSIO" />
-            </div>
-          </Link>
-
-          <nav aria-label="Navegação principal" className="hidden items-center lg:flex">
-            <ul className="flex items-center gap-7 text-sm font-medium xl:gap-8">
-              {NAV_LINKS.map((link) => (
-                <li key={link.name}>
-                  <Link
-                    className="group relative block py-2 text-slate-600 transition-colors duration-300 outline-none hover:text-slate-950 focus-visible:text-slate-950"
-                    href={link.href}
-                    onClick={(event) => handleDesktopNavigation(event, link.href)}
-                  >
-                    {link.name}
-
-                    <span
-                      aria-hidden="true"
-                      className="absolute bottom-1 left-1/2 h-px w-4 origin-center -translate-x-1/2 scale-x-0 bg-teal-600 transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100"
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          <div className="hidden items-center lg:flex">
+        <nav aria-label="Navegação principal" className="hidden items-center gap-1 lg:flex">
+          {NAV_LINKS.map((link) => (
             <Link
-              className="group relative isolate overflow-hidden rounded-full border border-slate-950/10 bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white shadow-[0_1px_2px_rgba(15,23,42,0.12),0_10px_24px_-12px_rgba(15,23,42,0.55)] transition-[transform,box-shadow] duration-300 outline-none hover:-translate-y-px hover:shadow-[0_2px_4px_rgba(15,23,42,0.12),0_14px_28px_-12px_rgba(15,23,42,0.6)] focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-3 active:translate-y-0 active:scale-[0.985]"
-              href="#contato"
-              onClick={(event) => handleDesktopNavigation(event, '#contato')}
+              className="rounded-full px-3 py-2 text-[0.78rem] font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              href={link.href}
+              key={link.href}
             >
-              <span
-                aria-hidden="true"
-                className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_120%,rgba(45,212,191,0.3),transparent_55%)] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
-              />
-
-              <span className="relative">Agendar consulta</span>
+              {link.name}
             </Link>
-          </div>
+          ))}
+        </nav>
 
-          <button
-            aria-controls="mobile-menu"
-            aria-expanded={isMenuOpen}
-            aria-label={isMenuOpen ? 'Fechar menu' : 'Abrir menu'}
-            className="relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-slate-900 transition-colors duration-300 outline-none hover:bg-slate-900/5 focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 lg:hidden"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            ref={menuButtonRef}
-            type="button"
-          >
-            <Menu
-              className="absolute will-change-transform"
-              ref={menuIconRef}
-              size={24}
-              strokeWidth={1.8}
-            />
-
-            <X
-              className="invisible absolute will-change-transform"
-              ref={closeIconRef}
-              size={24}
-              strokeWidth={1.8}
-            />
-          </button>
+        <div className="hidden lg:block">
+          <Link className="button-primary min-h-10 px-4 py-2 text-xs" href="#contato">
+            Agendar avaliação
+          </Link>
         </div>
 
-        <MobileHeader
-          isOpen={isMenuOpen}
-          links={NAV_LINKS}
-          onNavigate={navigateToSection}
-          setIsMenuOpen={setIsMenuOpen}
-          triggerRef={menuButtonRef}
-        />
+        <details className="group relative lg:hidden">
+          <summary
+            aria-label="Abrir menu de navegação"
+            className="flex size-10 cursor-pointer list-none items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-800 marker:content-none"
+          >
+            <svg aria-hidden="true" className="size-5 group-open:hidden" fill="none" viewBox="0 0 24 24">
+              <path d="M5 8h14M5 12h14M5 16h14" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+            </svg>
+            <svg aria-hidden="true" className="hidden size-5 group-open:block" fill="none" viewBox="0 0 24 24">
+              <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" strokeLinecap="round" strokeWidth="1.8" />
+            </svg>
+          </summary>
+
+          <div className="absolute top-[calc(100%+0.65rem)] right-0 w-[min(19rem,calc(100vw-1.5rem))] overflow-hidden rounded-[1.35rem] border border-slate-900/8 bg-white p-2 shadow-[0_24px_65px_-30px_rgba(15,23,42,0.38)]">
+            <nav aria-label="Navegação móvel">
+              <ul className="space-y-0.5">
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      className="flex min-h-11 items-center justify-between rounded-xl px-3.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-950"
+                      href={link.href}
+                    >
+                      {link.name}
+                      <span aria-hidden="true" className="text-slate-300">→</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-2 border-t border-slate-100 pt-2">
+                <Link className="button-primary w-full" href="#contato">
+                  Agendar avaliação
+                </Link>
+                <a
+                  className="mt-1 flex min-h-10 items-center justify-center text-xs font-medium text-teal-700"
+                  href={SITE_CONFIG.whatsapp.href}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  Conversar pelo WhatsApp
+                </a>
+              </div>
+            </nav>
+          </div>
+        </details>
       </div>
     </header>
   );

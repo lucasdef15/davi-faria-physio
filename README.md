@@ -1,181 +1,94 @@
 # Davi Faria Physio
 
-Site institucional desenvolvido para Davi Faria, fisioterapeuta com atuação em fisioterapia
-cardiorrespiratória, reabilitação funcional e acompanhamento pós-hospitalar em Mococa, SP.
+Site institucional do fisioterapeuta Davi Faria, com foco em fisioterapia cardiorrespiratória, reabilitação funcional, cuidado pós-hospitalar e atendimento domiciliar em Mococa e região.
 
-O projeto apresenta os serviços, a abordagem clínica, as áreas de atuação e os canais de contato
-do profissional, com foco em clareza, confiança, acessibilidade e boa experiência em dispositivos
-móveis.
+## Stack
 
-## Tecnologias
-
-- Next.js
-- React
+- Next.js 16
+- React 19
 - TypeScript
-- Tailwind CSS
-- GSAP
+- Tailwind CSS 4
+- GSAP e `@gsap/react`
+- Lucide React
 
 ## Requisitos
 
-- Node.js 24, conforme definido em `.nvmrc`
+- Node.js 22 ou superior
 - npm
 
-Em ambientes WSL, instale e execute o Node.js dentro do próprio WSL. Não reutilize o mesmo
-diretório `node_modules` entre Windows e Linux.
+A versão recomendada está definida em `.nvmrc`.
 
-## Desenvolvimento
-
-Instale as dependências:
+## Desenvolvimento local
 
 ```bash
 npm ci
-```
-
-Inicie o ambiente de desenvolvimento:
-
-```bash
+cp .env.example .env.local
 npm run dev
 ```
 
-Acesse:
+A aplicação ficará disponível em `http://localhost:3000`.
 
-```text
-http://localhost:3000
-```
-
-## Scripts disponíveis
+## Validação
 
 ```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
 npm run typecheck
-npm run test
+npm run lint
 npm run check
-npm run indexnow
+npm run build
 ```
 
-O comando abaixo executa a validação de tipos, o lint e os testes em sequência:
-
-```bash
-npm run check
-```
-
-`npm run indexnow` é manual e só aceita uma URL HTTPS canônica de Production com uma chave
-`INDEXNOW_KEY` válida. Ele não deve ser executado em localhost ou Preview.
-
-## Configuração do projeto
-
-As informações públicas e a URL canônica do site ficam centralizadas em:
-
-```text
-lib/site.ts
-```
-
-Nesse arquivo são configurados dados como:
-
-- nome do profissional;
-- título profissional;
-- descrição do site;
-- telefone e WhatsApp;
-- e-mail;
-- localização;
-- link de agendamento;
-- URL oficial do projeto;
-
-Os metadados, serviços e dados estruturados usados no SEO ficam em `lib/seo.ts`.
-
-Antes de publicar uma nova versão, confira se todos os dados estão atualizados e correspondem às
-informações reais do profissional.
+O comando `npm run check` executa TypeScript e ESLint. O build de produção também deve passar antes de qualquer deploy.
 
 ## Variáveis de ambiente
 
-Copie `.env.example` para `.env.local`. Para desenvolvimento local, mantenha:
+Use `.env.example` como referência. As principais variáveis são:
 
-```env
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
+- `NEXT_PUBLIC_SITE_URL`: URL canônica pública do site.
+- `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION`: token opcional do Google Search Console.
+- `NEXT_PUBLIC_BING_SITE_VERIFICATION`: token opcional do Bing Webmaster Tools.
+- `NEXT_PUBLIC_CONTENT_LAST_MODIFIED`: data pública da última atualização no formato `YYYY-MM-DD`.
+- `INDEXNOW_KEY`: chave privada opcional para submissão ao IndexNow.
 
-Na Vercel Production, configure a URL HTTPS canônica do site. Os tokens de Google, Bing e IndexNow
-só devem ser adicionados quando houver valores reais; `INDEXNOW_KEY` permanece privada e não deve
-usar o prefixo `NEXT_PUBLIC_`.
+Nunca versione `.env.local`.
 
 ## Estrutura principal
 
 ```text
 app/
+  layout.tsx              Metadados, fontes, header e footer
+  page.tsx                Ordem das seções da página
+  globals.css             Tokens globais e sistemas visuais complexos
+
 components/
-hooks/
+  layout/                  Header, footer e navegação
+  sections/
+    hero/                  Apresentação principal e entrada GSAP
+    for-whom/              Painel respiratório e situações acompanhadas
+    about/                 Perfil profissional
+    how-works/             Abordagem clínica
+    results/               Jornada de evolução funcional
+      carousel/            Mecânica e componentes do carrossel responsivo
+    faq/                   Perguntas frequentes
+    contact/               Chamada final para contato
+  svg/                     Marca em SVG
+
 lib/
-public/
+  site.ts                  Dados centrais do profissional e contatos
+  seo.ts                   Metadados estruturados e conteúdo de SEO
+
 scripts/
-tests/
+  submit-indexnow.mjs      Submissão opcional ao IndexNow
 ```
 
-### Diretórios
+## Convenções do projeto
 
-- `app/`: rotas, layout, metadata, sitemap, robots e arquivos técnicos;
-- `components/layout/`: header, navegação e footer;
-- `components/sections/`: seções da página;
-- `hooks/`: animações e interações reutilizáveis;
-- `hooks/hero-canvas/`: renderer, perfis de qualidade e tipos do canvas do Hero;
-- `lib/site.ts`: configuração central do projeto;
-- `lib/seo.ts`: metadados e dados estruturados para SEO;
-- `public/`: imagens e arquivos públicos;
-- `scripts/`: scripts auxiliares de indexação e manutenção;
-- `tests/`: testes automatizados.
-
-## SEO e indexação
-
-O projeto possui configuração para:
-
-- metadata do Next.js;
-- Open Graph;
-- Twitter Cards;
-- sitemap;
-- robots.txt;
-- dados estruturados em JSON-LD;
-- indexação em mecanismos de busca;
-- descoberta por mecanismos e agentes de IA.
-
-Depois do deploy, valide:
-
-```text
-/robots.txt
-/sitemap.xml
-/opengraph-image
-/llms.txt
-/llms-full.txt
-/entity.json
-```
-
-## Validação antes do deploy
-
-Execute:
-
-```bash
-npm run check
-npm run build
-```
-
-Também verifique manualmente:
-
-- navegação em desktop e mobile;
-- links de WhatsApp e agendamento;
-- telefone e e-mail;
-- imagens e textos;
-- acessibilidade básica;
-- metadata e compartilhamento;
-- funcionamento do sitemap e do robots.txt.
+- Componentes e ajustes simples usam Tailwind diretamente no JSX.
+- Sistemas visuais maiores, pseudo-elementos e composições complexas podem permanecer em `app/globals.css`.
+- Animações devem ter fallback visível sem JavaScript e respeitar `prefers-reduced-motion`.
+- Evite canvas, loops contínuos desnecessários e efeitos caros em dispositivos móveis.
+- Dados profissionais e URLs devem ser centralizados em `lib/site.ts`.
+- Arquivos de build, caches, relatórios temporários e versões antigas não devem ser versionados.
 
 ## Deploy
 
-O projeto está preparado para deploy na Vercel.
-
-Após configurar o repositório, confirme as variáveis de ambiente e publique a aplicação utilizando
-o ambiente de produção.
-
-## Créditos
-
-Projeto desenvolvido pela Alkor Labs para Davi Faria.
+O projeto está preparado para Vercel. Em produção, configure `NEXT_PUBLIC_SITE_URL` com a URL HTTPS canônica e execute o build antes do deploy.

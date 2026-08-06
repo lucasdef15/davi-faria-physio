@@ -1,4 +1,4 @@
-import { SITE_CONFIG, SITE_URL } from './site.ts';
+import { SITE_CONFIG, SITE_URL } from './site';
 
 export const SEO_TITLE = 'Davi Faria | Fisioterapia Cardiorrespiratória e Funcional em Mococa';
 

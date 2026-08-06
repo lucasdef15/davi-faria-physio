@@ -24,7 +24,7 @@ export default function Footer() {
     <footer className="relative overflow-hidden bg-[#06111c]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute right-[-16rem] bottom-[-20rem] size-[32rem] rounded-full bg-sky-400/[0.045] blur-[150px]"
+        className="pointer-events-none absolute right-[-16rem] bottom-[-20rem] hidden size-[32rem] rounded-full bg-[radial-gradient(circle,rgba(56,189,248,.06),transparent_68%)] md:block"
       />
 
       <div className="site-container relative">

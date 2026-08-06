@@ -1,10 +1,7 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  outputFileTracingRoot: process.cwd(),
-  turbopack: {
-    root: process.cwd(),
-  },
+  reactStrictMode: true,
 };
 
 export default nextConfig;
